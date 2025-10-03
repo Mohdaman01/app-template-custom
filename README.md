@@ -257,4 +257,4 @@ For more information:
 
 + Learn more about [Wix app templates](https://dev.wix.com/docs/build-apps/get-started/templates/get-started-from-an-app-template).
 + Check out our [full collection of app templates](https://dev.wix.com/apps-templates).
-+ See our documentation for details about [building Wix apps](https://dev.wix.com/docs/build-apps).
++ See our documentation for details about [building Wix apps](https://dev.wix.com/docs/build-apps)
