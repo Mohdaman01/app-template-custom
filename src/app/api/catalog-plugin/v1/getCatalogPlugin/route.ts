@@ -18,14 +18,13 @@ async function verify(jwt: string) {
       issuer: 'wix.com',
       audience: process.env.WIX_APP_ID, // Replace with your app ID
       maxTokenAge: 60,
-      clockTolerance: 60
+      clockTolerance: 60,
     });
     return payload;
   } catch (error) {
     throw new Error('JWT verification failed');
   }
 }
-
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,7 +35,7 @@ export async function POST(req: NextRequest) {
     // const requestedItems = body.data.request.catalogReferences;
 
     // const catalogItems = await Promise.all(requestedItems.map(async (reference) => {
-      // Replace "<COLLECTION ID>" with your actual collection ID
+    // Replace "<COLLECTION ID>" with your actual collection ID
     //   const results = await wixClient.items
     //     .query("<COLLECTION ID>")
     //     .eq("mainProductId", reference.catalogReference.catalogItemId)
