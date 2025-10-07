@@ -28,6 +28,7 @@ async function verify(jwt: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('Received request:', req);
     const { token } = await req.json();
     const body = await verify(token);
     console.log('Decoded JWT payload:', body);
