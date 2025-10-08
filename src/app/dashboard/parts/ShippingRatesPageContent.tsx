@@ -85,13 +85,13 @@ export const ShippingRatesPageContent = ({}: {}) => {
             activeId='2'
             items={[
               { id: WixPageId.MANAGE_APPS, value: 'Apps' },
-              { id: 'shipping-app-page', value: 'Shipping Rate App', disabled: true },
+              { id: 'shipping-app-page', value: 'Gold Prices App', disabled: true },
             ]}
             onClick={({ id }) => navigate(id as string)}
           />
         }
-        title='Shipping Rate App'
-        subtitle='Customize shipping fees based on item quantity, weight, and delivery speed, ensuring a flexible and cost-effective solution for your business.'
+        title='Gold Prices'
+        subtitle='Set Gold, Silver and Platinum prices globally and automatically update all product prices.'
       />
       <Page.Content>
         <Layout>
@@ -119,17 +119,17 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     />
                   </Cell>
                 ))}
-                <Cell>
+                {/* <Cell>
                   <ActivationDetailsCard />
-                </Cell>
+                </Cell> */}
               </Layout>
             )}
           </Cell>
-          <Cell span={4}>
+          {/* <Cell span={4}>
             <Page.Sticky>
               <ShippingMethodSummary />
             </Page.Sticky>
-          </Cell>
+          </Cell> */}
         </Layout>
       </Page.Content>
     </Page>

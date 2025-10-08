@@ -13,32 +13,32 @@ const defaultAppData: ShippingAppData = {
   shippingMethods: [
     {
       code: 'example-shipping-rate-standard',
-      title: 'Standard Delivery',
+      title: 'Prices',
       type: ShippingMethodType.STANDARD,
       unitOfMeasure: ShippingUnitOfMeasure.NUM_OF_ITEMS,
       logistics: {
         deliveryTime: '3-7 days',
       },
       costs: {
-        first: 5,
-        second: 2,
-        thirdAndUp: 1,
+        gold: 5,
+        silver: 2,
+        platinum: 1,
       },
     },
-    {
-      code: 'example-shipping-rate-express',
-      title: 'Express Delivery',
-      type: ShippingMethodType.EXPRESS,
-      unitOfMeasure: ShippingUnitOfMeasure.NUM_OF_ITEMS,
-      logistics: {
-        deliveryTime: '1-2 days',
-      },
-      costs: {
-        first: 10,
-        second: 4,
-        thirdAndUp: 2,
-      },
-    },
+    // {
+    //   code: 'example-shipping-rate-express',
+    //   title: 'Express Delivery',
+    //   type: ShippingMethodType.EXPRESS,
+    //   unitOfMeasure: ShippingUnitOfMeasure.NUM_OF_ITEMS,
+    //   logistics: {
+    //     deliveryTime: '1-2 days',
+    //   },
+    //   costs: {
+    //     first: 10,
+    //     second: 4,
+    //     thirdAndUp: 2,
+    //   },
+    // },
   ],
 };
 

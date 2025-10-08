@@ -186,19 +186,19 @@ export const getTestingShippingAppData = (): ShippingAppData => ({
         thirdAndUp: 1,
       },
     },
-    {
-      code: 'test-shipping-rate-express',
-      title: 'Testing Express Delivery',
-      type: ShippingMethodType.EXPRESS,
-      unitOfMeasure: ShippingUnitOfMeasure.NUM_OF_ITEMS,
-      logistics: {
-        deliveryTime: '1-2 days',
-      },
-      costs: {
-        first: 10,
-        second: 4,
-        thirdAndUp: 2,
-      },
-    },
+    // {
+    //   code: 'test-shipping-rate-express',
+    //   title: 'Testing Express Delivery',
+    //   type: ShippingMethodType.EXPRESS,
+    //   unitOfMeasure: ShippingUnitOfMeasure.NUM_OF_ITEMS,
+    //   logistics: {
+    //     deliveryTime: '1-2 days',
+    //   },
+    //   costs: {
+    //     first: 10,
+    //     second: 4,
+    //     thirdAndUp: 2,
+    //   },
+    // },
   ],
 });

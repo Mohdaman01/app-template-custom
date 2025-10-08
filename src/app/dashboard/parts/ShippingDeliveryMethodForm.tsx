@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
+// import { useEffect, useState } from 'react';
 import { Box, Card, Cell, Collapse, Dropdown, FormField, Input, Layout, Text, TextButton } from '@wix/design-system';
-import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
+// import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
 import { ShippingCosts, ShippingMethodType, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
 import testIds from '@/app/utils/test-ids';
 
 export function ShippingDeliveryMethodForm({
   title,
-  unitOfMeasure,
+  // unitOfMeasure,
   shippingCosts,
-  onUnitOfMeasureSelected,
+  // onUnitOfMeasureSelected,
   onShippingCostsChanged,
-  expandByDefault = false,
+  // expandByDefault = false,
 }: {
   title: string;
   methodType: ShippingMethodType;
@@ -20,29 +20,29 @@ export function ShippingDeliveryMethodForm({
   onShippingCostsChanged: (shippingCosts: ShippingCosts) => void;
   expandByDefault?: boolean;
 }) {
-  const uomName =
-    unitOfMeasure === ShippingUnitOfMeasure.NUM_OF_ITEMS
-      ? 'item'
-      : unitOfMeasure === ShippingUnitOfMeasure.WEIGHT_IN_LB
-        ? 'lb'
-        : 'kg';
-  const [isOpen, setIsOpen] = useState(expandByDefault);
+  // const uomName =
+  //   unitOfMeasure === ShippingUnitOfMeasure.NUM_OF_ITEMS
+  //     ? 'item'
+  //     : unitOfMeasure === ShippingUnitOfMeasure.WEIGHT_IN_LB
+  //       ? 'lb'
+  //       : 'kg';
+  // const [isOpen, setIsOpen] = useState(expandByDefault);
 
   return (
     <Card dataHook={testIds.DASHBOARD.SHIPPING_METHOD}>
       <Card.Header
         title={title}
-        suffix={
-          <TextButton dataHook={testIds.DASHBOARD.SHIPPING_METHOD_EXPAND} onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? <ChevronUp /> : <ChevronDown />}
-          </TextButton>
-        }
+        // suffix={
+        //   <TextButton dataHook={testIds.DASHBOARD.SHIPPING_METHOD_EXPAND} onClick={() => setIsOpen(!isOpen)}>
+        //     {isOpen ? <ChevronUp /> : <ChevronDown />}
+        //   </TextButton>
+        // }
       />
-      <Collapse open={isOpen}>
+      {/* <Collapse open={isOpen}> */}
         <Card.Divider />
         <Card.Content dataHook={testIds.DASHBOARD.SHIPPING_METHOD_FORM}>
           <Box direction='vertical' gap='SP7'>
-            <FormField label='Parameter'>
+            {/* <FormField label='Parameter'>
               <Dropdown
                 selectedId={unitOfMeasure}
                 onSelect={(option, sameOptionWasPicked) =>
@@ -55,39 +55,55 @@ export function ShippingDeliveryMethodForm({
                 ]}
                 placeholder='Select parameter'
               />
-            </FormField>
+            </FormField> */}
 
             <Box direction='vertical' gap='SP4'>
-              <Text>Set conditions:</Text>
+              <Text>Set Prices:</Text>
               <Layout>
                 <Cell span={4}>
-                  <FormField label={`First ${uomName}`}>
+                  <FormField label={`Gold`}>
                     <Input
                       prefix={<Input.Affix>$</Input.Affix>}
+                      suffix={<Input.Affix>per gram</Input.Affix>}
                       placeholder='Select totalPrice'
                       type='number'
-                      value={shippingCosts.first}
+                      value={shippingCosts.gold}
                       onChange={(e) => {
-                        onShippingCostsChanged({ ...shippingCosts, first: Number(e.currentTarget.value) });
+                        onShippingCostsChanged({ ...shippingCosts, gold: Number(e.currentTarget.value) });
                       }}
                     />
                   </FormField>
                 </Cell>
                 <Cell span={4}>
-                  <FormField label={`Second ${uomName}`}>
+                  <FormField label={`Silver`}>
                     <Input
                       prefix={<Input.Affix>$</Input.Affix>}
+                      suffix={<Input.Affix>per gram</Input.Affix>}
                       placeholder='Select totalPrice'
                       type='number'
-                      value={shippingCosts.second}
+                      value={shippingCosts.silver}
                       onChange={(e) => {
-                        onShippingCostsChanged({ ...shippingCosts, second: Number(e.currentTarget.value) });
+                        onShippingCostsChanged({ ...shippingCosts, silver: Number(e.currentTarget.value) });
                       }}
                     />
                   </FormField>
                 </Cell>
                 <Cell span={4}>
-                  <FormField label={`Each additional ${uomName}`}>
+                  <FormField label={`Platinum`}>
+                    <Input
+                      prefix={<Input.Affix>$</Input.Affix>}
+                      suffix={<Input.Affix>per gram</Input.Affix>}
+                      placeholder='Select totalPrice'
+                      type='number'
+                      value={shippingCosts.platinum}
+                      onChange={(e) => {
+                        onShippingCostsChanged({ ...shippingCosts, platinum: Number(e.currentTarget.value) });
+                      }}
+                    />
+                  </FormField>
+                </Cell>
+                {/* <Cell span={4}>
+                  <FormField label={`SetPlatinum`}>
                     <Input
                       prefix={<Input.Affix>$</Input.Affix>}
                       suffix={<Input.Affix>per {uomName}</Input.Affix>}
@@ -99,12 +115,12 @@ export function ShippingDeliveryMethodForm({
                       type='number'
                     />
                   </FormField>
-                </Cell>
+                </Cell> */}
               </Layout>
             </Box>
           </Box>
         </Card.Content>
-      </Collapse>
+      {/* </Collapse> */}
     </Card>
   );
 }

@@ -31,13 +31,13 @@ export enum ShippingMethodType {
  */
 export interface ShippingCosts {
   /** Cost for the first item/KG/LB. */
-  first: number;
+  gold: number;
 
   /** Cost for the second item/KG/LB. */
-  second: number;
+  silver: number;
 
   /** Cost for the third and subsequent items/KGs/LBs */
-  thirdAndUp: number;
+  platinum: number;
 }
 
 /**
