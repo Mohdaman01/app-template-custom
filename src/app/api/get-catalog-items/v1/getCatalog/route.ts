@@ -66,7 +66,94 @@ export async function POST(req: NextRequest) {
     // }));
 
     console.info('Shipping rates::POST - called');
-    return wixAppClient.servicePlugins.processRequest(req);
+    return NextResponse.json({
+      catalogItems: [
+        {
+          catalogReference: {
+            appId: '818f4b81-f496-4d50-813b-e44cd39a099e',
+            catalogItemId: '205c539b-fd89-4b0c-8d7e-55630f66e5f9',
+          },
+          data: {
+            productName: {
+              original: 'Simple Black Sun Hat',
+            },
+            url: {
+              relativePath: '/product-page/sun-hat',
+              url: 'https://www.<MY_STORE>.com/',
+            },
+            itemType: {
+              preset: 'PHYSICAL',
+            },
+            price: '20.00',
+            physicalProperties: {
+              sku: '227220141836',
+              shippable: true,
+            },
+            media: {
+              id: 'e3bc27_6edeb786f2aa44b19d9abcb4d1f6bfd6~mv2.png',
+              height: 720,
+              width: 720,
+            },
+          },
+        },
+        {
+          catalogReference: {
+            appId: '3b8658a6-3282-4b5e-ae0e-439113e20aef',
+            catalogItemId: 'f95bd723-ea83-40f2-8cb8-accff2d54866',
+            options: {
+              color: 'Green',
+              size: 'M',
+            },
+          },
+          data: {
+            productName: {
+              original: 'Cotton T-shirt',
+            },
+            url: {
+              relativePath: '/product-page/t-shirt',
+              url: 'https://www.<MY_STORE>.com/',
+            },
+            itemType: {
+              preset: 'PHYSICAL',
+            },
+            price: {
+              amount: '80.00',
+            },
+            descriptionLines: [
+              {
+                name: {
+                  original: 'Size',
+                  translated: 'Size',
+                },
+                plainText: {
+                  original: 'Medium',
+                  translated: 'Medium',
+                },
+              },
+              {
+                name: {
+                  original: 'Color',
+                  translated: 'Color',
+                },
+                plainText: {
+                  original: 'Green',
+                  translated: 'Green',
+                },
+              },
+            ],
+            physicalProperties: {
+              sku: '889809004958',
+              shippable: true,
+            },
+            media: {
+              id: '3258d9_77f175cc4d234714825fbf316803ca9a~mv2.png',
+              height: 720,
+              width: 720,
+            },
+          },
+        },
+      ],
+    });
   } catch (error) {
     console.error('Error processing request:', error);
     return NextResponse.json({ error: 'Failed to create plugin' }, { status: 400 });
