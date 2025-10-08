@@ -181,9 +181,9 @@ export const getTestingShippingAppData = (): ShippingAppData => ({
         deliveryTime: '3-7 days',
       },
       costs: {
-        first: 5,
-        second: 2,
-        thirdAndUp: 1,
+        gold: 5,
+        silver: 2,
+        platinum: 1,
       },
     },
     // {
@@ -195,9 +195,9 @@ export const getTestingShippingAppData = (): ShippingAppData => ({
     //     deliveryTime: '1-2 days',
     //   },
     //   costs: {
-    //     first: 10,
-    //     second: 4,
-    //     thirdAndUp: 2,
+    //     gold: 10,
+    //     silver: 4,
+    //     platinum: 2,
     //   },
     // },
   ],
