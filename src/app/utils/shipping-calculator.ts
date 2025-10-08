@@ -16,9 +16,9 @@ export function calculatePrice(
   }
 
   // Calculate the total price based on the specified rule.
-  const firstItemCost = shippingCosts.first;
-  const secondItemCost = shippingCosts.second;
-  const additionalItemCost = shippingCosts.thirdAndUp;
+  const firstItemCost = shippingCosts.gold;
+  const secondItemCost = shippingCosts.silver;
+  const additionalItemCost = shippingCosts.platinum;
   if (units <= 1) {
     return firstItemCost;
   } else if (units <= 2) {
