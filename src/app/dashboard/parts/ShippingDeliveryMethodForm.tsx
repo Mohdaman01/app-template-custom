@@ -39,10 +39,10 @@ export function ShippingDeliveryMethodForm({
         // }
       />
       {/* <Collapse open={isOpen}> */}
-        <Card.Divider />
-        <Card.Content dataHook={testIds.DASHBOARD.SHIPPING_METHOD_FORM}>
-          <Box direction='vertical' gap='SP7'>
-            {/* <FormField label='Parameter'>
+      <Card.Divider />
+      <Card.Content dataHook={testIds.DASHBOARD.SHIPPING_METHOD_FORM}>
+        <Box direction='vertical' gap='SP7'>
+          {/* <FormField label='Parameter'>
               <Dropdown
                 selectedId={unitOfMeasure}
                 onSelect={(option, sameOptionWasPicked) =>
@@ -57,52 +57,52 @@ export function ShippingDeliveryMethodForm({
               />
             </FormField> */}
 
-            <Box direction='vertical' gap='SP4'>
-              <Text>Set Prices:</Text>
-              <Layout>
-                <Cell span={4}>
-                  <FormField label={`Gold`}>
-                    <Input
-                      prefix={<Input.Affix>$</Input.Affix>}
-                      suffix={<Input.Affix>per gram</Input.Affix>}
-                      placeholder='Select totalPrice'
-                      type='number'
-                      value={shippingCosts.gold}
-                      onChange={(e) => {
-                        onShippingCostsChanged({ ...shippingCosts, gold: Number(e.currentTarget.value) });
-                      }}
-                    />
-                  </FormField>
-                </Cell>
-                <Cell span={4}>
-                  <FormField label={`Silver`}>
-                    <Input
-                      prefix={<Input.Affix>$</Input.Affix>}
-                      suffix={<Input.Affix>per gram</Input.Affix>}
-                      placeholder='Select totalPrice'
-                      type='number'
-                      value={shippingCosts.silver}
-                      onChange={(e) => {
-                        onShippingCostsChanged({ ...shippingCosts, silver: Number(e.currentTarget.value) });
-                      }}
-                    />
-                  </FormField>
-                </Cell>
-                <Cell span={4}>
-                  <FormField label={`Platinum`}>
-                    <Input
-                      prefix={<Input.Affix>$</Input.Affix>}
-                      suffix={<Input.Affix>per gram</Input.Affix>}
-                      placeholder='Select totalPrice'
-                      type='number'
-                      value={shippingCosts.platinum}
-                      onChange={(e) => {
-                        onShippingCostsChanged({ ...shippingCosts, platinum: Number(e.currentTarget.value) });
-                      }}
-                    />
-                  </FormField>
-                </Cell>
-                {/* <Cell span={4}>
+          <Box direction='vertical' gap='SP4'>
+            <Text>Set Prices:</Text>
+            <Layout>
+              <Cell span={4}>
+                <FormField label={`Gold`}>
+                  <Input
+                    prefix={<Input.Affix>$</Input.Affix>}
+                    suffix={<Input.Affix>per gram</Input.Affix>}
+                    placeholder='Select totalPrice'
+                    type='number'
+                    value={shippingCosts.gold}
+                    onChange={(e) => {
+                      onShippingCostsChanged({ ...shippingCosts, gold: Number(e.currentTarget.value) });
+                    }}
+                  />
+                </FormField>
+              </Cell>
+              <Cell span={4}>
+                <FormField label={`Silver`}>
+                  <Input
+                    prefix={<Input.Affix>$</Input.Affix>}
+                    suffix={<Input.Affix>per gram</Input.Affix>}
+                    placeholder='Select totalPrice'
+                    type='number'
+                    value={shippingCosts.silver}
+                    onChange={(e) => {
+                      onShippingCostsChanged({ ...shippingCosts, silver: Number(e.currentTarget.value) });
+                    }}
+                  />
+                </FormField>
+              </Cell>
+              <Cell span={4}>
+                <FormField label={`Platinum`}>
+                  <Input
+                    prefix={<Input.Affix>$</Input.Affix>}
+                    suffix={<Input.Affix>per gram</Input.Affix>}
+                    placeholder='Select totalPrice'
+                    type='number'
+                    value={shippingCosts.platinum}
+                    onChange={(e) => {
+                      onShippingCostsChanged({ ...shippingCosts, platinum: Number(e.currentTarget.value) });
+                    }}
+                  />
+                </FormField>
+              </Cell>
+              {/* <Cell span={4}>
                   <FormField label={`SetPlatinum`}>
                     <Input
                       prefix={<Input.Affix>$</Input.Affix>}
@@ -116,10 +116,10 @@ export function ShippingDeliveryMethodForm({
                     />
                   </FormField>
                 </Cell> */}
-              </Layout>
-            </Box>
+            </Layout>
           </Box>
-        </Card.Content>
+        </Box>
+      </Card.Content>
       {/* </Collapse> */}
     </Card>
   );
