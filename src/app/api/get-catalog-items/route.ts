@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
     console.info('Shipping rates::POST - called');
     return wixAppClient.servicePlugins.processRequest(req);
   } catch (error) {
+    console.error('Error processing request:', error);
     return NextResponse.json({ error: 'Failed to create plugin' }, { status: 400 });
   }
 }
