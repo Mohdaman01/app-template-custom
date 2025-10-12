@@ -61,7 +61,7 @@ wixAppClient.catalog.provideHandlers({
               width: 720,
             },
           },
-        }
+        },
       ],
     };
   },
