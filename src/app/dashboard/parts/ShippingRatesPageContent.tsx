@@ -118,6 +118,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                       shippingCosts={method.costs}
                       onShippingCostsChanged={setCostsForMethod(method.code)}
                       updateStoreItemPrice={async (newPrice: number) => {
+                        console.log('New Price to set in store:', newPrice);
                         await updateStoreItemPrice(newPrice);
                       }}
                       methodType={method.type}

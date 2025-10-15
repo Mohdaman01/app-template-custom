@@ -1,5 +1,16 @@
 // import { useEffect, useState } from 'react';
-import { Box, Card, Cell, Collapse, Dropdown, FormField, Input, Layout, Text, TextButton } from '@wix/design-system';
+import {
+  Box,
+  Card,
+  Cell,
+  Collapse,
+  Dropdown,
+  FormField,
+  NumberInput,
+  Layout,
+  Text,
+  TextButton,
+} from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
 import { ShippingCosts, ShippingMethodType, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
 import testIds from '@/app/utils/test-ids';
@@ -64,14 +75,12 @@ export function UpdatePriceForm({
             <Layout>
               <Cell span={4}>
                 <FormField label={`Enter Price`}>
-                  <Input
-                    prefix={<Input.Affix>$</Input.Affix>}
-                    suffix={<Input.Affix>per gram</Input.Affix>}
+                  <NumberInput
                     placeholder='Select totalPrice'
                     type='number'
                     value={shippingCosts.gold}
-                    onChange={(e) => {
-                      onShippingCostsChanged({ ...shippingCosts, gold: Number(e.currentTarget.value) });
+                    onChange={(value) => {
+                      updateStoreItemPrice(value ?? 0);
                     }}
                   />
                 </FormField>

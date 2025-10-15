@@ -10,6 +10,7 @@ export async function getStoreItemsPrices() {
 }
 
 export async function updateStoreItemPrice(newPrice: number) {
+  console.log('Updating store item prices with increment:', newPrice);
   const storeProducts = await getStoreItemsPrices();
 
   const updatedProducts = storeProducts.map((product) => ({
