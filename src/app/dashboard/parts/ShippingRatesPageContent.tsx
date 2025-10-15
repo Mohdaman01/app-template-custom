@@ -133,23 +133,23 @@ export const ShippingRatesPageContent = ({}: {}) => {
               </Layout>
             ) : (
               <Layout>
-                {currentShippingAppData?.shippingMethods.map((method, index) => (
-                  <Cell key={method.code}>
-                    <UpdatePriceForm
-                      expandByDefault={index === 0}
-                      title={method.title}
-                      unitOfMeasure={method.unitOfMeasure}
-                      onUnitOfMeasureSelected={setUomForMethod(method.code)}
-                      shippingCosts={method.costs}
-                      onShippingCostsChanged={setCostsForMethod(method.code)}
-                      updateStoreItemPrice={async (newPrice: number) => {
-                        console.log('New Price to set in store:', newPrice);
-                        setUpdatedPriceForMethod(newPrice);
-                      }}
-                      methodType={method.type}
-                    />
-                  </Cell>
-                ))}
+                {/* {currentShippingAppData?.shippingMethods.map((method, index) => ( */}
+                <Cell key={1}>
+                  <UpdatePriceForm
+                    // expandByDefault={0}
+                    title='Update Prices'
+                    unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
+                    onUnitOfMeasureSelected={setUomForMethod('1')}
+                    shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
+                    onShippingCostsChanged={setCostsForMethod('1')}
+                    updateStoreItemPrice={async (newPrice: number) => {
+                      console.log('New Price to set in store:', newPrice);
+                      setUpdatedPriceForMethod(newPrice);
+                    }}
+                    // methodType=
+                  />
+                </Cell>
+                {/* ))} */}
                 {/* <Cell>
                   <ActivationDetailsCard />
                 </Cell> */}

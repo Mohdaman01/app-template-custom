@@ -25,7 +25,7 @@ export function UpdatePriceForm({
   updateStoreItemPrice,
 }: {
   title: string;
-  methodType: ShippingMethodType;
+  //   methodType: ShippingMethodType;
   unitOfMeasure: ShippingUnitOfMeasure;
   shippingCosts: ShippingCosts;
   onUnitOfMeasureSelected: (type: ShippingUnitOfMeasure) => void;
@@ -78,7 +78,6 @@ export function UpdatePriceForm({
                   <NumberInput
                     placeholder='Select totalPrice'
                     type='number'
-                    value={shippingCosts.gold}
                     onChange={(value) => {
                       updateStoreItemPrice(value ?? 0);
                     }}
