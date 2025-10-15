@@ -19,6 +19,7 @@
     "@wix/ecom": "^1.0.1195",
     "@wix/sdk": "^1.10.2",
     "@wix/wix-ui-icons-common": "^3.16.0",
+    "@wix/stores": "^1.0.120",
     "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
     "next": "14.0.4",

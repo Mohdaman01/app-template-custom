@@ -8,7 +8,9 @@ import { ShippingAppData, ShippingCosts, ShippingUnitOfMeasure } from '@/app/typ
 import { ShippingMethodSummary } from '@/app/dashboard/parts/ShippingMethodSummary';
 import { WixPageId } from '@/app/utils/navigation.const';
 import { useSetShippingAppData, useShippingAppData } from '@/app/client-hooks/app-data';
+import { updateStoreItemPrice } from '@/app/actions/store';
 import testIds from '@/app/utils/test-ids';
+import { UpdatePriceForm } from './UpdatePriceForm';
 
 export const ShippingRatesPageContent = ({}: {}) => {
   const {
@@ -108,13 +110,16 @@ export const ShippingRatesPageContent = ({}: {}) => {
               <Layout>
                 {currentShippingAppData?.shippingMethods.map((method, index) => (
                   <Cell key={method.code}>
-                    <ShippingDeliveryMethodForm
+                    <UpdatePriceForm
                       expandByDefault={index === 0}
                       title={method.title}
                       unitOfMeasure={method.unitOfMeasure}
                       onUnitOfMeasureSelected={setUomForMethod(method.code)}
                       shippingCosts={method.costs}
                       onShippingCostsChanged={setCostsForMethod(method.code)}
+                      updateStoreItemPrice={async (newPrice: number) => {
+                        await updateStoreItemPrice(newPrice);
+                      }}
                       methodType={method.type}
                     />
                   </Cell>

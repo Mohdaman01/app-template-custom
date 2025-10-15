@@ -1,5 +1,6 @@
 import { createClient } from '@wix/sdk/client';
 import { orders } from '@wix/ecom';
+import { products } from '@wix/stores'
 
 // This utility function initializes and returns a Wix SDK client for in server and client components.
 // It is intended for scenarios where an HTTP request contains a valid authorization header,
@@ -15,5 +16,6 @@ export const createSdk = (accessToken: string) =>
     },
     modules: {
       orders,
+      products
     },
   });
