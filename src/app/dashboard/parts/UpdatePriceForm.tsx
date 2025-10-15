@@ -30,7 +30,7 @@ export function UpdatePriceForm({
   shippingCosts: ShippingCosts;
   onUnitOfMeasureSelected: (type: ShippingUnitOfMeasure) => void;
   onShippingCostsChanged: (shippingCosts: ShippingCosts) => void;
-  updateStoreItemPrice: (newPrice: number) => Promise<void>;
+  updateStoreItemPrice: (newPrice: number) => void;
   expandByDefault?: boolean;
 }) {
   // const uomName =

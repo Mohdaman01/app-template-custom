@@ -21,28 +21,47 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const [currentShippingAppData, setCurrentShippingAppData] = useState<ShippingAppData | undefined>(
     persistedShippingAppData,
   );
-  useEffect(() => {
-    setCurrentShippingAppData(persistedShippingAppData);
-  }, [persistedShippingAppData]);
+
+  const [priceAppData, setPriceAppData] = useState(0);
 
   const [loading, setLoading] = useState(false);
+
   const onSave = useCallback(() => {
     setLoading(true);
-    persistShippingAppData(currentShippingAppData!)
+    updateStoreItemPrice(priceAppData)
       .then(() => {
         showToast({
-          message: 'Shipping rates saved successfully.',
+          message: 'Prices updated successfully.',
           type: 'success',
         });
       })
       .catch(() => {
         showToast({
-          message: 'Failed to save shipping rates.',
+          message: 'Failed to update Prices.',
           type: 'error',
         });
       })
       .finally(() => setLoading(false));
-  }, [persistShippingAppData, currentShippingAppData, showToast]);
+  }, [priceAppData]);
+
+  // const onSave = useCallback(() => {
+  //   setLoading(true);
+  //   persistShippingAppData(currentShippingAppData!)
+  //     .then(() => {
+  //       showToast({
+  //         message: 'Shipping rates saved successfully.',
+  //         type: 'success',
+  //       });
+  //     })
+  //     .catch(() => {
+  //       showToast({
+  //         message: 'Failed to save shipping rates.',
+  //         type: 'error',
+  //       });
+  //     })
+  //     .finally(() => setLoading(false));
+  // }, [persistShippingAppData, currentShippingAppData, showToast]);
+
   const setUomForMethod = useCallback(
     (code: string) => (type: ShippingUnitOfMeasure) => {
       setCurrentShippingAppData({
@@ -63,6 +82,12 @@ export const ShippingRatesPageContent = ({}: {}) => {
     },
     [currentShippingAppData],
   );
+  const setUpdatedPriceForMethod = useCallback(
+    (code: number) => (newPrice: number) => {
+      setPriceAppData(newPrice);
+    },
+    [priceAppData],
+  );
   const ButtonsBar = useCallback(
     () => (
       <Box gap='SP2'>
@@ -76,7 +101,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         <Button onClick={onSave}>{loading ? <Loader size='tiny' /> : 'Save'}</Button>
       </Box>
     ),
-    [loading, onSave, persistedShippingAppData],
+    [loading, onSave],
   );
   return (
     <Page height='100vh' dataHook={testIds.DASHBOARD.WRAPPER}>
@@ -119,7 +144,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                       onShippingCostsChanged={setCostsForMethod(method.code)}
                       updateStoreItemPrice={async (newPrice: number) => {
                         console.log('New Price to set in store:', newPrice);
-                        await updateStoreItemPrice(newPrice);
+                        setUpdatedPriceForMethod(newPrice);
                       }}
                       methodType={method.type}
                     />
