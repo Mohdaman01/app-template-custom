@@ -35,7 +35,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
           type: 'success',
         });
       })
-      .catch(() => {
+      .catch((e) => {
+        console.error('Error updating prices:', e);
         showToast({
           message: 'Failed to update Prices.',
           type: 'error',
