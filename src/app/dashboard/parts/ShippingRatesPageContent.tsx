@@ -73,12 +73,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
     },
     [currentShippingAppData],
   );
-  const setUpdatedPriceForMethod = useCallback(
-    (code: number) => (newPrice: number) => {
-      setPriceAppData(newPrice);
-    },
-    [priceAppData],
-  );
+  // Update the global priceAppData directly when UpdatePriceForm calls back with a number
+  const setUpdatedPriceForMethod = useCallback((newPrice: number) => {
+    setPriceAppData(newPrice);
+  }, []);
   const ButtonsBar = useCallback(
     () => (
       <Box gap='SP2'>
