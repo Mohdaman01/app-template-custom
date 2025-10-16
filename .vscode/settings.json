@@ -1,0 +1,12 @@
+{
+    "chat.mcp.serverSampling": {
+        "app-template-custom/.vscode/mcp.json: wix-mcp-remote": {
+            "allowedModels": [
+                "copilot/gpt-5-mini",
+                "copilot/claude-3.5-sonnet",
+                "copilot/gpt-4.1",
+                "copilot/gpt-4o"
+            ]
+        }
+    }
+}

@@ -2,6 +2,7 @@
 import { Box, Breadcrumbs, Button, Cell, Layout, Loader, Page } from '@wix/design-system';
 import { useSDK } from '@/app/utils/wix-sdk.client-only';
 import { useCallback, useEffect, useState } from 'react';
+import { useAccessToken } from '@/app/client-hooks/access-token';
 import { ActivationDetailsCard } from '@/app/dashboard/parts/ActivationDetailsCard';
 import { ShippingDeliveryMethodForm } from '@/app/dashboard/parts/ShippingDeliveryMethodForm';
 import { ShippingAppData, ShippingCosts, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
@@ -26,42 +27,29 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   const [loading, setLoading] = useState(false);
 
+  const accessTokenPromise = useAccessToken();
+
   const onSave = useCallback(() => {
     setLoading(true);
-    updateStoreItemPrice(priceAppData)
-      .then(() => {
+    (async () => {
+      try {
+        const accessToken = (await accessTokenPromise)!;
+        await updateStoreItemPrice({ accessToken, newPrice: priceAppData });
         showToast({
           message: 'Prices updated successfully.',
           type: 'success',
         });
-      })
-      .catch((e) => {
+      } catch (e) {
         console.error('Error updating prices:', e);
         showToast({
           message: 'Failed to update Prices.',
           type: 'error',
         });
-      })
-      .finally(() => setLoading(false));
-  }, [priceAppData]);
-
-  // const onSave = useCallback(() => {
-  //   setLoading(true);
-  //   persistShippingAppData(currentShippingAppData!)
-  //     .then(() => {
-  //       showToast({
-  //         message: 'Shipping rates saved successfully.',
-  //         type: 'success',
-  //       });
-  //     })
-  //     .catch(() => {
-  //       showToast({
-  //         message: 'Failed to save shipping rates.',
-  //         type: 'error',
-  //       });
-  //     })
-  //     .finally(() => setLoading(false));
-  // }, [persistShippingAppData, currentShippingAppData, showToast]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [priceAppData, accessTokenPromise, showToast]);
 
   const setUomForMethod = useCallback(
     (code: string) => (type: ShippingUnitOfMeasure) => {

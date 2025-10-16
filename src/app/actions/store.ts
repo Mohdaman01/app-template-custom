@@ -1,34 +1,48 @@
-import { products } from '@wix/stores';
-import { wixAppClient } from '../utils/wix-sdk.app';
+import { createSdk } from '@/app/utils/wix-sdk';
 
-export async function getStoreItemsPrices() {
-  const items = await wixAppClient.products
-    .queryProducts()
-    .find()
-    .then((res) => res.items);
-  return items;
+// 'use server';
+// If you intend to run these as server actions, uncomment the line above.
+
+export async function getStoreItemsPrices({ accessToken }: { accessToken: string }) {
+  try {
+    const sdk = createSdk(accessToken);
+    const items = await sdk.products
+      .queryProducts()
+      .find()
+      .then((res) => res.items);
+    return items;
+  } catch (e) {
+    console.error('Failed to fetch store items:', e);
+    return [];
+  }
 }
 
-export async function updateStoreItemPrice(newPrice: number) {
+export async function updateStoreItemPrice({ accessToken, newPrice }: { accessToken: string; newPrice: number }) {
   console.log('Updating store item prices with increment:', newPrice);
-  const storeProducts = await getStoreItemsPrices();
-  console.log('Fetched store products:', storeProducts);
-  const updatedProducts = storeProducts.map((product) => ({
-    ...product,
-    priceData: {
-      ...product.priceData,
-      price: (product.priceData?.price ?? 0) + newPrice,
-    },
-    lastUpdated: new Date(),
-  }));
+  try {
+    const storeProducts = await getStoreItemsPrices({ accessToken });
+    console.log('Fetched store products:', storeProducts);
+    const updatedProducts = storeProducts.map((product) => ({
+      ...product,
+      priceData: {
+        ...product.priceData,
+        price: (product.priceData?.price ?? 0) + newPrice,
+      },
+      lastUpdated: new Date(),
+    }));
 
-  await Promise.all(
-    updatedProducts.map((product) =>
-      wixAppClient.products.updateProduct(product._id!, {
-        priceData: product.priceData,
-      }),
-    ),
-  );
+    const sdk = createSdk(accessToken);
+    await Promise.all(
+      updatedProducts.map((product) =>
+        sdk.products.updateProduct(product._id!, {
+          priceData: product.priceData,
+        }),
+      ),
+    );
 
-  return updatedProducts;
+    return updatedProducts;
+  } catch (e) {
+    console.error('Failed to update store item prices:', e);
+    return [];
+  }
 }
