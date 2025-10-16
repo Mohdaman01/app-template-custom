@@ -34,6 +34,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
     (async () => {
       try {
         const accessToken = (await accessTokenPromise)!;
+        console.log('Access Token:', accessToken);
+        console.log('Price to update:', priceAppData);
         await updateStoreItemPrice({ accessToken, newPrice: priceAppData });
         showToast({
           message: 'Prices updated successfully.',
