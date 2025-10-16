@@ -23,6 +23,7 @@ export function UpdatePriceForm({
   onShippingCostsChanged,
   // expandByDefault = false,
   updateStoreItemPrice,
+  prefix,
 }: {
   title: string;
   //   methodType: ShippingMethodType;
@@ -32,6 +33,7 @@ export function UpdatePriceForm({
   onShippingCostsChanged: (shippingCosts: ShippingCosts) => void;
   updateStoreItemPrice: (newPrice: number) => void;
   expandByDefault?: boolean;
+  prefix?: string;
 }) {
   // const uomName =
   //   unitOfMeasure === ShippingUnitOfMeasure.NUM_OF_ITEMS
@@ -71,11 +73,13 @@ export function UpdatePriceForm({
             </FormField> */}
 
           <Box direction='vertical' gap='SP4'>
-            <Text>Set Prices:</Text>
+            <Text>Set Price:</Text>
             <Layout>
-              <Cell span={4}>
+              <Cell span={8}>
                 <FormField label={`Enter Price`}>
                   <NumberInput
+                    prefix={typeof prefix === 'string' ? prefix : '$'}
+                    suffix='per gram'
                     placeholder='Select totalPrice'
                     type='number'
                     onChange={(value) => {

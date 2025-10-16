@@ -26,6 +26,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const [priceAppData, setPriceAppData] = useState(0);
 
   const [loading, setLoading] = useState(false);
+  const [currencyPrefix, setCurrencyPrefix] = useState('$');
 
   const accessTokenPromise = useAccessToken();
 
@@ -52,6 +53,23 @@ export const ShippingRatesPageContent = ({}: {}) => {
       }
     })();
   }, [priceAppData, accessTokenPromise, showToast]);
+
+  // read site currency from client SDK when available and map to a symbol
+  useEffect(() => {
+    const loadCurrency = async () => {
+      try {
+        const sdk = useSDK();
+        // sdk.site may be undefined depending on runtime; guard before calling
+        // @ts-ignore
+        const currency = typeof sdk?.site?.currency === 'function' ? await sdk.site.currency() : undefined;
+        const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
+        setCurrencyPrefix(currency && symbolMap[currency] ? symbolMap[currency] : '$');
+      } catch (e) {
+        // keep default
+      }
+    };
+    loadCurrency();
+  }, []);
 
   const setUomForMethod = useCallback(
     (code: string) => (type: ShippingUnitOfMeasure) => {
@@ -106,7 +124,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
             onClick={({ id }) => navigate(id as string)}
           />
         }
-        title='Gold Prices'
+        title='Metal Prices'
         subtitle='Set Gold, Silver and Platinum prices globally and automatically update all product prices.'
       />
       <Page.Content>
@@ -126,7 +144,37 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 <Cell key={1}>
                   <UpdatePriceForm
                     // expandByDefault={0}
-                    title='Update Prices'
+                    title='Gold Price'
+                    unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
+                    onUnitOfMeasureSelected={setUomForMethod('1')}
+                    shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
+                    onShippingCostsChanged={setCostsForMethod('1')}
+                    updateStoreItemPrice={async (newPrice: number) => {
+                      console.log('New Price to set in store:', newPrice);
+                      setUpdatedPriceForMethod(newPrice);
+                    }}
+                    // methodType=
+                  />
+                </Cell>
+                <Cell key={1}>
+                  <UpdatePriceForm
+                    // expandByDefault={0}
+                    title='Silver Price'
+                    unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
+                    onUnitOfMeasureSelected={setUomForMethod('1')}
+                    shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
+                    onShippingCostsChanged={setCostsForMethod('1')}
+                    updateStoreItemPrice={async (newPrice: number) => {
+                      console.log('New Price to set in store:', newPrice);
+                      setUpdatedPriceForMethod(newPrice);
+                    }}
+                    // methodType=
+                  />
+                </Cell>
+                <Cell key={1}>
+                  <UpdatePriceForm
+                    // expandByDefault={0}
+                    title='Plantinum Price'
                     unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
                     onUnitOfMeasureSelected={setUomForMethod('1')}
                     shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}

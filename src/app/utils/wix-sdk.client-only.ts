@@ -12,21 +12,22 @@ function inIframe() {
 }
 
 export const useSDK = () => {
-  const sdk = useMemo(
-    () =>
-      typeof window === 'undefined' || !inIframe()
-        ? {
-            // The SDK is not initialized during server-side rendering or outside an iframe, making SDK methods unusable in these contexts.
-            dashboard: {} as SDK,
-          }
-        : createClient({
-            host: dashboard.host(),
-            auth: dashboard.auth(),
-            modules: {
-              dashboard,
-            },
-          }),
-    [typeof window],
-  );
+  const sdk = useMemo(() => {
+    if (typeof window === 'undefined' || !inIframe()) {
+      // The SDK is not initialized during server-side rendering or outside an iframe, making SDK methods unusable in these contexts.
+      return { dashboard: {} as SDK };
+    }
+
+    // NOTE: we intentionally do NOT include optional modules here (like '@wix/site-site')
+    // to avoid bundler/runtime module resolution errors when those packages are not installed.
+    // If you need the `site` module at runtime, install '@wix/site-site' and add it here.
+    return createClient({
+      host: dashboard.host(),
+      auth: dashboard.auth(),
+      modules: {
+        dashboard,
+      },
+    });
+  }, [typeof window]);
   return sdk;
 };
