@@ -13,13 +13,16 @@
     "lint": "next lint --fix"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.75.0",
     "@tanstack/react-query": "^5.17.19",
     "@wix/dashboard": "^1.3.7",
     "@wix/design-system": "^1.85.0",
     "@wix/ecom": "^1.0.1195",
     "@wix/sdk": "^1.10.2",
-    "@wix/wix-ui-icons-common": "^3.16.0",
+    "@wix/site": "^1.23.0",
     "@wix/stores": "^1.0.120",
+    "@wix/wix-ui-icons-common": "^3.16.0",
     "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
     "next": "14.0.4",

@@ -62,7 +62,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         // sdk.site may be undefined depending on runtime; guard before calling
         // @ts-ignore
         const currency = typeof sdk?.site?.currency === 'function' ? await sdk.site.currency() : undefined;
-        const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥' };
+        const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹' };
         setCurrencyPrefix(currency && symbolMap[currency] ? symbolMap[currency] : '$');
       } catch (e) {
         // keep default

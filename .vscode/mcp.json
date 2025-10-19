@@ -7,6 +7,10 @@
         "@wix/mcp-remote",
         "https://mcp.wix.com/sse"
       ]
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=luipjosfsqcvcwlvpdul"
     }
   }
 }
