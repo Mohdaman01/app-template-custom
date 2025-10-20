@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
 
   // Create Supabase server client using cookie store from Next headers
   try {
-  const cookieStore = await cookies();
-  // Use the service client for trusted server-side writes (bypasses RLS).
-  const supabase = createServiceClient ? createServiceClient(cookieStore) : createClient(cookieStore);
+    const cookieStore = await cookies();
+    // Use the service client for trusted server-side writes (bypasses RLS).
+    const supabase = createServiceClient ? createServiceClient(cookieStore) : createClient(cookieStore);
 
     // Build a dashboard rule record from the webhook payload.
     // Assumption: payload contains basic site/app info. We'll store instanceId, eventType and raw payload.
