@@ -1,7 +1,7 @@
 import { wixAppClient } from '@/app/utils/wix-sdk.app';
 import { type NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
-import { createClient } from '@/app/utils/supabase/server';
+import { createClient, createServiceClient } from '@/app/utils/supabase/server';
 
 export async function POST(request: NextRequest) {
   console.info('Webhook::install - called');
@@ -17,8 +17,9 @@ export async function POST(request: NextRequest) {
 
   // Create Supabase server client using cookie store from Next headers
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+  const cookieStore = await cookies();
+  // Use the service client for trusted server-side writes (bypasses RLS).
+  const supabase = createServiceClient ? createServiceClient(cookieStore) : createClient(cookieStore);
 
     // Build a dashboard rule record from the webhook payload.
     // Assumption: payload contains basic site/app info. We'll store instanceId, eventType and raw payload.
