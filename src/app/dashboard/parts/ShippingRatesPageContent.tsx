@@ -64,12 +64,12 @@ export const ShippingRatesPageContent = ({}: {}) => {
   useEffect(() => {
     const loadCurrency = async () => {
       try {
-        const sdk = useSDK();
-        // sdk.site may be undefined depending on runtime; guard before calling
-        // @ts-ignore
-        const currency = typeof sdk?.site?.currency === 'function' ? await sdk.site.currency() : undefined;
-        const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹' };
-        setCurrencyPrefix(currency && symbolMap[currency] ? symbolMap[currency] : '$');
+        // const sdk = useSDK();
+        // // sdk.site may be undefined depending on runtime; guard before calling
+        // // @ts-ignore
+        // const currency = typeof sdk?.site?.currency === 'function' ? await sdk.site.currency() : undefined;
+        // const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹' };
+        // setCurrencyPrefix(currency && symbolMap[currency] ? symbolMap[currency] : '$');
         const appInstance = await useGetAppInstanceId();
         console.log('App Instance:', appInstance);
         // Fetch existing dashboard rule from Supabase using instanceId
