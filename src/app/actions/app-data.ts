@@ -80,6 +80,8 @@ export async function setShippingAppData(data: ShippingAppData, appIdentifier: A
 }
 
 export const useGetAppInstanceId = async () => {
+  console.log('useGetAppInstanceId - called');
   const appInstance = await wixAppClient.appInstances.getAppInstance();
+  console.log('useGetAppInstanceId - appInstance:', appInstance);
   return appInstance;
 };
