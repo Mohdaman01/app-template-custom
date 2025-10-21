@@ -6,6 +6,7 @@
 import { ShippingAppData, ShippingMethodType, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
 import { parseAccessToken } from '@/app/actions/app-instance';
 import { isTestingToken } from '@/app/utils/access-token';
+import { wixAppClient } from '../utils/wix-sdk.app';
 
 type AppIdentifier = { instanceId?: string; accessToken?: string };
 
@@ -77,3 +78,8 @@ export async function setShippingAppData(data: ShippingAppData, appIdentifier: A
   const databaseKey = await getDatabaseKey(appIdentifier);
   console.log('persistShippingAppData::key: ', databaseKey, ' data: ', JSON.stringify(data, null, 2));
 }
+
+export const useGetAppInstanceId = async () => {
+  const appInstance = await wixAppClient.appInstances.getAppInstance();
+  return appInstance;
+};

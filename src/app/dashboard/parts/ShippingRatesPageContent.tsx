@@ -3,27 +3,33 @@ import { Box, Breadcrumbs, Button, Cell, Layout, Loader, Page } from '@wix/desig
 import { useSDK } from '@/app/utils/wix-sdk.client-only';
 import { useCallback, useEffect, useState } from 'react';
 import { useAccessToken } from '@/app/client-hooks/access-token';
-import { ActivationDetailsCard } from '@/app/dashboard/parts/ActivationDetailsCard';
-import { ShippingDeliveryMethodForm } from '@/app/dashboard/parts/ShippingDeliveryMethodForm';
+// import { ActivationDetailsCard } from '@/app/dashboard/parts/ActivationDetailsCard';
+// import { ShippingDeliveryMethodForm } from '@/app/dashboard/parts/ShippingDeliveryMethodForm';
 import { ShippingAppData, ShippingCosts, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
-import { ShippingMethodSummary } from '@/app/dashboard/parts/ShippingMethodSummary';
+// import { ShippingMethodSummary } from '@/app/dashboard/parts/ShippingMethodSummary';
 import { WixPageId } from '@/app/utils/navigation.const';
-import { useSetShippingAppData, useShippingAppData } from '@/app/client-hooks/app-data';
+import { useShippingAppData } from '@/app/client-hooks/app-data';
 import { updateStoreItemPrice } from '@/app/actions/store';
+import { useGetAppInstanceId } from '@/app/actions/app-data';
 import testIds from '@/app/utils/test-ids';
 import { UpdatePriceForm } from './UpdatePriceForm';
+// import { cookies } from 'next/headers';
+import { createClient } from '@/app/utils/supabase/client';
 
 export const ShippingRatesPageContent = ({}: {}) => {
   const {
     dashboard: { showToast, navigate },
   } = useSDK();
-  const persistShippingAppData = useSetShippingAppData();
+  // const persistShippingAppData = useSetShippingAppData();
   const { data: persistedShippingAppData, isLoading: isLoadingAppData } = useShippingAppData();
   const [currentShippingAppData, setCurrentShippingAppData] = useState<ShippingAppData | undefined>(
     persistedShippingAppData,
   );
 
   const [priceAppData, setPriceAppData] = useState(0);
+  const [goldPrice, setGoldPrice] = useState(0);
+  const [silverPrice, setSilverPrice] = useState(0);
+  const [platinumPrice, setPlatinumPrice] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [currencyPrefix, setCurrencyPrefix] = useState('$');
@@ -64,8 +70,26 @@ export const ShippingRatesPageContent = ({}: {}) => {
         const currency = typeof sdk?.site?.currency === 'function' ? await sdk.site.currency() : undefined;
         const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹' };
         setCurrencyPrefix(currency && symbolMap[currency] ? symbolMap[currency] : '$');
+        const appInstance = await useGetAppInstanceId();
+        console.log('App Instance:', appInstance);
+        // Fetch existing dashboard rule from Supabase using instanceId
+        // const cookieStore = await cookies();
+        // Use the service client for trusted server-side writes (bypasses RLS).
+        const instanceId = appInstance?.instance?.instanceId;
+        const supabase = createClient();
+        const { data: rules, error } = await supabase
+          .from('Dashboard Rules')
+          .select('*')
+          .eq('instance_id', instanceId)
+          .maybeSingle();
+        console.log('Fetched dashboard rule from Supabase:', rules);
+        if (error) {
+          console.error('Webhook::install - failed to upsert dashboard rule', error);
+          throw Error(error.message);
+        }
       } catch (e) {
         // keep default
+        console.error('Error loading site currency or app instance:', e);
       }
     };
     loadCurrency();
@@ -156,7 +180,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     // methodType=
                   />
                 </Cell>
-                <Cell key={1}>
+                <Cell key={2}>
                   <UpdatePriceForm
                     // expandByDefault={0}
                     title='Silver Price'
@@ -171,7 +195,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     // methodType=
                   />
                 </Cell>
-                <Cell key={1}>
+                <Cell key={3}>
                   <UpdatePriceForm
                     // expandByDefault={0}
                     title='Plantinum Price'
