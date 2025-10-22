@@ -40,6 +40,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
     setLoading(true);
     (async () => {
       try {
+        console.log('Saving prices:', { goldPrice, silverPrice, platinumPrice });
         const accessToken = (await accessTokenPromise)!;
         console.log('Access Token:', accessToken);
         console.log('Price to update:', priceAppData);
@@ -118,7 +119,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         // const currency = typeof sdk?.site?.currency === 'function' ? await sdk.site.currency() : undefined;
         // const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹' };
         // setCurrencyPrefix(currency && symbolMap[currency] ? symbolMap[currency] : '$');
-
+        console.log('Loading site currency and app instance in useEffect');
         const accessToken = (await accessTokenPromise)!;
         const appInstance = await getAppInstance({ accessToken });
         console.log('App Instance:', appInstance);
@@ -241,7 +242,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
                     onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
-                      console.log('New Price to set in store:', newPrice);
+                      console.log('New Gold Price to set in store:', newPrice);
                       setUpdatedGoldPriceForMethod(newPrice);
                     }}
                     // methodType=
@@ -257,7 +258,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
                     onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
-                      console.log('New Price to set in store:', newPrice);
+                      console.log('New Silver Price to set in store:', newPrice);
                       setUpdatedSilverPriceForMethod(newPrice);
                     }}
                     // methodType=
@@ -266,14 +267,14 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 <Cell key={3}>
                   <UpdatePriceForm
                     // expandByDefault={0}
-                    title='Plantinum Price'
+                    title='Platinum Price'
                     price={platinumPrice ?? 0}
                     unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
                     onUnitOfMeasureSelected={setUomForMethod('1')}
                     shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
                     onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
-                      console.log('New Price to set in store:', newPrice);
+                      console.log('New Platinum Price to set in store:', newPrice);
                       setUpdatedPlatinumPriceForMethod(newPrice);
                     }}
                     // methodType=
