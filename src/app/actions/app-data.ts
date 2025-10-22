@@ -6,7 +6,7 @@
 import { ShippingAppData, ShippingMethodType, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
 import { parseAccessToken } from '@/app/actions/app-instance';
 import { isTestingToken } from '@/app/utils/access-token';
-import { wixAppClient } from '../utils/wix-sdk.app';
+import { createSdk } from '@/app/utils/wix-sdk';
 
 type AppIdentifier = { instanceId?: string; accessToken?: string };
 
@@ -79,9 +79,11 @@ export async function setShippingAppData(data: ShippingAppData, appIdentifier: A
   console.log('persistShippingAppData::key: ', databaseKey, ' data: ', JSON.stringify(data, null, 2));
 }
 
-export const useGetAppInstanceId = async () => {
-  console.log('useGetAppInstanceId - called');
-  const appInstance = await wixAppClient.appInstances.getAppInstance();
-  console.log('useGetAppInstanceId - appInstance:', appInstance);
+export const getAppInstance = async ({ accessToken }: { accessToken: string }) => {
+  console.log('getAppInstance - called');
+  // use the runtime SDK that accepts an access token for request-scoped auth
+  const sdk = createSdk(accessToken);
+  const appInstance = await sdk.appInstances.getAppInstance();
+  console.log('getAppInstance - appInstance:', appInstance);
   return appInstance;
 };

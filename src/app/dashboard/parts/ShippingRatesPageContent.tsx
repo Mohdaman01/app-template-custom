@@ -10,7 +10,7 @@ import { ShippingAppData, ShippingCosts, ShippingUnitOfMeasure } from '@/app/typ
 import { WixPageId } from '@/app/utils/navigation.const';
 import { useShippingAppData } from '@/app/client-hooks/app-data';
 import { updateStoreItemPrice } from '@/app/actions/store';
-import { useGetAppInstanceId } from '@/app/actions/app-data';
+import { getAppInstance } from '@/app/actions/app-data';
 import testIds from '@/app/utils/test-ids';
 import { UpdatePriceForm } from './UpdatePriceForm';
 // import { cookies } from 'next/headers';
@@ -70,11 +70,11 @@ export const ShippingRatesPageContent = ({}: {}) => {
         // const currency = typeof sdk?.site?.currency === 'function' ? await sdk.site.currency() : undefined;
         // const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹' };
         // setCurrencyPrefix(currency && symbolMap[currency] ? symbolMap[currency] : '$');
-        const appInstance = await useGetAppInstanceId();
+        const accessToken = (await accessTokenPromise)!;
+        const appInstance = await getAppInstance({ accessToken });
         console.log('App Instance:', appInstance);
         // Fetch existing dashboard rule from Supabase using instanceId
         // const cookieStore = await cookies();
-        // Use the service client for trusted server-side writes (bypasses RLS).
         const instanceId = appInstance?.instance?.instanceId;
         const supabase = createClient();
         const { data: rules, error } = await supabase
@@ -92,8 +92,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
         console.error('Error loading site currency or app instance:', e);
       }
     };
-    loadCurrency();
-  }, []);
+    void loadCurrency();
+  }, [accessTokenPromise]);
 
   const setUomForMethod = useCallback(
     (code: string) => (type: ShippingUnitOfMeasure) => {
@@ -132,7 +132,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         <Button onClick={onSave}>{loading ? <Loader size='tiny' /> : 'Save'}</Button>
       </Box>
     ),
-    [loading, onSave],
+    [loading, onSave, persistedShippingAppData],
   );
   return (
     <Page height='100vh' dataHook={testIds.DASHBOARD.WRAPPER}>
