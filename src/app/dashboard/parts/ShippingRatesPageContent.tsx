@@ -42,8 +42,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
       try {
         console.log('Saving prices:', { goldPrice, silverPrice, platinumPrice });
         const accessToken = (await accessTokenPromise)!;
-        console.log('Access Token:', accessToken);
-        console.log('Price to update:', priceAppData);
+        // console.log('Access Token:', accessToken);
+        // console.log('Price to update:', priceAppData);
 
         const appInstance = await getAppInstance({ accessToken });
         console.log('App Instance:', appInstance);
@@ -107,7 +107,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         setLoading(false);
       }
     })();
-  }, [accessTokenPromise]);
+  }, [accessTokenPromise, goldPrice, silverPrice, platinumPrice, priceAppData, showToast]);
 
   // read site currency from client SDK when available and map to a symbol
   useEffect(() => {
@@ -176,30 +176,44 @@ export const ShippingRatesPageContent = ({}: {}) => {
     },
     [currentShippingAppData],
   );
-  // Update the global priceAppData directly when UpdatePriceForm calls back with a number
-  const setUpdatedGoldPriceForMethod = useCallback((newPrice: number) => {
-    setGoldPrice(newPrice);
-  }, []);
-  const setUpdatedSilverPriceForMethod = useCallback((newPrice: number) => {
-    setSilverPrice(newPrice);
-  }, []);
-  const setUpdatedPlatinumPriceForMethod = useCallback((newPrice: number) => {
-    setPlatinumPrice(newPrice);
-  }, []);
+
+  const setUpdatedGoldPriceForMethod = useCallback(
+    (newPrice: number) => {
+      setGoldPrice(newPrice);
+      // Log the value we just set (don't read outer closure `goldPrice` which may be stale)
+      console.log('Setting Gold Price to:', newPrice);
+    },
+    [setGoldPrice],
+  );
+  const setUpdatedSilverPriceForMethod = useCallback(
+    (newPrice: number) => {
+      setSilverPrice(newPrice);
+      console.log('Setting Silver Price to:', newPrice);
+    },
+    [setSilverPrice],
+  );
+  const setUpdatedPlatinumPriceForMethod = useCallback(
+    (newPrice: number) => {
+      setPlatinumPrice(newPrice);
+      console.log('Setting Platinum Price to:', newPrice);
+    },
+    [setPlatinumPrice],
+  );
+
   const ButtonsBar = useCallback(
     () => (
       <Box gap='SP2'>
-        <Button
+        {/* <Button
           skin='standard'
           priority='secondary'
           onClick={() => setCurrentShippingAppData(persistedShippingAppData)}
         >
           Cancel
-        </Button>
+        </Button> */}
         <Button onClick={onSave}>{loading ? <Loader size='tiny' /> : 'Save'}</Button>
       </Box>
     ),
-    [loading, onSave, persistedShippingAppData],
+    [loading, onSave],
   );
   return (
     <Page height='100vh' dataHook={testIds.DASHBOARD.WRAPPER}>
