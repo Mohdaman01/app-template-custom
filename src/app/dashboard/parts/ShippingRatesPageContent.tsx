@@ -27,9 +27,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
   );
 
   const [priceAppData, setPriceAppData] = useState(0);
-  const [goldPrice, setGoldPrice] = useState(0);
-  const [silverPrice, setSilverPrice] = useState(0);
-  const [platinumPrice, setPlatinumPrice] = useState(0);
+  const [goldPrice, setGoldPrice] = useState<number | null>(null);
+  const [silverPrice, setSilverPrice] = useState<number | null>(null);
+  const [platinumPrice, setPlatinumPrice] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [currencyPrefix, setCurrencyPrefix] = useState('$');
@@ -43,11 +43,57 @@ export const ShippingRatesPageContent = ({}: {}) => {
         const accessToken = (await accessTokenPromise)!;
         console.log('Access Token:', accessToken);
         console.log('Price to update:', priceAppData);
-        await updateStoreItemPrice({ accessToken, newPrice: priceAppData });
-        showToast({
-          message: 'Prices updated successfully.',
-          type: 'success',
-        });
+
+        const appInstance = await getAppInstance({ accessToken });
+        console.log('App Instance:', appInstance);
+        const instanceId = appInstance?.instance?.instanceId;
+        const supabase = createClient();
+
+        if (!instanceId) {
+          throw new Error('Missing instanceId when trying to update Dashboard Rules');
+        }
+
+        // Build payload only with values that are non-null (avoid setting columns to null accidentally)
+        const payload: Record<string, any> = {};
+        if (goldPrice !== null) payload.goldPrice = goldPrice;
+        if (silverPrice !== null) payload.silverPrice = silverPrice;
+        if (platinumPrice !== null) payload.platinumPrice = platinumPrice;
+
+        // Try to update an existing row matching the instance_id
+        const { data: rules, error } = await supabase
+          .from('Dashboard Rules')
+          .update(payload)
+          .eq('instance_id', instanceId)
+          .select()
+          .maybeSingle();
+
+        if (error) {
+          console.error('Failed to update Dashboard Rules:', error);
+          throw error;
+        }
+
+        // If no row was returned, there was no matching record — upsert to create one
+        if (!rules) {
+          const upsertRecord = { instance_id: instanceId, ...payload };
+          const { data: upserted, error: upsertError } = await supabase
+            .from('Dashboard Rules')
+            .upsert(upsertRecord, { onConflict: 'instance_id' })
+            .select()
+            .maybeSingle();
+          if (upsertError) {
+            console.error('Failed to upsert Dashboard Rules:', upsertError);
+            throw upsertError;
+          }
+          console.log('Upserted dashboard rule in Supabase:', upserted);
+        } else {
+          console.log('Updated dashboard rule in Supabase:', rules);
+        }
+
+        // await updateStoreItemPrice({ accessToken, newPrice: priceAppData });
+        // showToast({
+        //   message: 'Prices updated successfully.',
+        //   type: 'success',
+        // });
       } catch (e) {
         console.error('Error updating prices:', e);
         showToast({
@@ -58,7 +104,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         setLoading(false);
       }
     })();
-  }, [priceAppData, accessTokenPromise, showToast]);
+  }, [priceAppData, accessTokenPromise, showToast, goldPrice, silverPrice, platinumPrice]);
 
   // read site currency from client SDK when available and map to a symbol
   useEffect(() => {
@@ -83,6 +129,16 @@ export const ShippingRatesPageContent = ({}: {}) => {
           .eq('instance_id', instanceId)
           .maybeSingle();
         console.log('Fetched dashboard rule from Supabase:', rules);
+        if (rules?.goldPrice) {
+          setGoldPrice(rules?.goldPrice);
+        }
+        if (rules?.silverPrice) {
+          setSilverPrice(rules?.silverPrice);
+        }
+        if (rules?.platinumPrice) {
+          setPlatinumPrice(rules?.platinumPrice);
+        }
+
         if (error) {
           console.error('Webhook::install - failed to upsert dashboard rule', error);
           throw Error(error.message);
@@ -116,8 +172,14 @@ export const ShippingRatesPageContent = ({}: {}) => {
     [currentShippingAppData],
   );
   // Update the global priceAppData directly when UpdatePriceForm calls back with a number
-  const setUpdatedPriceForMethod = useCallback((newPrice: number) => {
-    setPriceAppData(newPrice);
+  const setUpdatedGoldPriceForMethod = useCallback((newPrice: number) => {
+    setGoldPrice(newPrice);
+  }, []);
+  const setUpdatedSilverPriceForMethod = useCallback((newPrice: number) => {
+    setSilverPrice(newPrice);
+  }, []);
+  const setUpdatedPlatinumPriceForMethod = useCallback((newPrice: number) => {
+    setPlatinumPrice(newPrice);
   }, []);
   const ButtonsBar = useCallback(
     () => (
@@ -167,6 +229,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 {/* {currentShippingAppData?.shippingMethods.map((method, index) => ( */}
                 <Cell key={1}>
                   <UpdatePriceForm
+                    price={goldPrice ?? 0}
                     // expandByDefault={0}
                     title='Gold Price'
                     unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
@@ -175,7 +238,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
                       console.log('New Price to set in store:', newPrice);
-                      setUpdatedPriceForMethod(newPrice);
+                      setUpdatedGoldPriceForMethod(newPrice);
                     }}
                     // methodType=
                   />
@@ -184,13 +247,14 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   <UpdatePriceForm
                     // expandByDefault={0}
                     title='Silver Price'
+                    price={silverPrice ?? 0}
                     unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
                     onUnitOfMeasureSelected={setUomForMethod('1')}
                     shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
                     onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
                       console.log('New Price to set in store:', newPrice);
-                      setUpdatedPriceForMethod(newPrice);
+                      setUpdatedSilverPriceForMethod(newPrice);
                     }}
                     // methodType=
                   />
@@ -199,13 +263,14 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   <UpdatePriceForm
                     // expandByDefault={0}
                     title='Plantinum Price'
+                    price={platinumPrice ?? 0}
                     unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
                     onUnitOfMeasureSelected={setUomForMethod('1')}
                     shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
                     onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
                       console.log('New Price to set in store:', newPrice);
-                      setUpdatedPriceForMethod(newPrice);
+                      setUpdatedPlatinumPriceForMethod(newPrice);
                     }}
                     // methodType=
                   />

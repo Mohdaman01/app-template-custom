@@ -22,10 +22,12 @@ export function UpdatePriceForm({
   // onUnitOfMeasureSelected,
   onShippingCostsChanged,
   // expandByDefault = false,
+  price,
   updateStoreItemPrice,
   prefix,
 }: {
   title: string;
+  price: number;
   //   methodType: ShippingMethodType;
   unitOfMeasure: ShippingUnitOfMeasure;
   shippingCosts: ShippingCosts;
@@ -82,6 +84,7 @@ export function UpdatePriceForm({
                     suffix='per gram'
                     placeholder='Select totalPrice'
                     type='number'
+                    value={price}
                     onChange={(value) => {
                       updateStoreItemPrice(value ?? 0);
                     }}
