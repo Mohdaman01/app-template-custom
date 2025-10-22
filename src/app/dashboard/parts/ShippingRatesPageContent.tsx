@@ -104,7 +104,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         setLoading(false);
       }
     })();
-  }, [priceAppData, accessTokenPromise, showToast, goldPrice, silverPrice, platinumPrice]);
+  }, [accessTokenPromise]);
 
   // read site currency from client SDK when available and map to a symbol
   useEffect(() => {
@@ -116,13 +116,15 @@ export const ShippingRatesPageContent = ({}: {}) => {
         // const currency = typeof sdk?.site?.currency === 'function' ? await sdk.site.currency() : undefined;
         // const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹' };
         // setCurrencyPrefix(currency && symbolMap[currency] ? symbolMap[currency] : '$');
+
         const accessToken = (await accessTokenPromise)!;
         const appInstance = await getAppInstance({ accessToken });
         console.log('App Instance:', appInstance);
-        // Fetch existing dashboard rule from Supabase using instanceId
-        // const cookieStore = await cookies();
+
         const instanceId = appInstance?.instance?.instanceId;
+
         const supabase = createClient();
+
         const { data: rules, error } = await supabase
           .from('Dashboard Rules')
           .select('*')
