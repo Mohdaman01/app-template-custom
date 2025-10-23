@@ -75,28 +75,16 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
         console.log('Updated dashboard rule in Supabase:', rules);
 
-        // If no row was returned, there was no matching record — upsert to create one
-        // if (!rules) {
-        //   const upsertRecord = { instance_id: instanceId, ...payload };
-        //   const { data: upserted, error: upsertError } = await supabase
-        //     .from('Dashboard Rules')
-        //     .upsert(upsertRecord, { onConflict: 'instance_id' })
-        //     .select()
-        //     .maybeSingle();
-        //   if (upsertError) {
-        //     console.error('Failed to upsert Dashboard Rules:', upsertError);
-        //     throw upsertError;
-        //   }
-        //   console.log('Upserted dashboard rule in Supabase:', upserted);
-        // } else {
-        //   console.log('Updated dashboard rule in Supabase:', rules);
-        // }
-
-        // await updateStoreItemPrice({ accessToken, newPrice: priceAppData });
-        // showToast({
-        //   message: 'Prices updated successfully.',
-        //   type: 'success',
-        // });
+        await updateStoreItemPrice({
+          accessToken,
+          goldPrice: goldPrice!,
+          silverPrice: silverPrice!,
+          platinumPrice: platinumPrice!,
+        });
+        showToast({
+          message: 'Prices updated successfully.',
+          type: 'success',
+        });
       } catch (e) {
         console.error('Error updating prices:', e);
         showToast({

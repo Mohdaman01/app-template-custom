@@ -17,8 +17,18 @@ export async function getStoreItemsPrices({ accessToken }: { accessToken: string
   }
 }
 
-export async function updateStoreItemPrice({ accessToken, newPrice }: { accessToken: string; newPrice: number }) {
-  console.log('Updating store item prices with increment:', newPrice);
+export async function updateStoreItemPrice({
+  accessToken,
+  goldPrice,
+  silverPrice,
+  platinumPrice,
+}: {
+  accessToken: string;
+  goldPrice: number;
+  silverPrice: number;
+  platinumPrice: number;
+}) {
+  console.log('Updating store item prices with increment:', { goldPrice, silverPrice, platinumPrice });
   try {
     const storeProducts = await getStoreItemsPrices({ accessToken });
     console.log('Fetched store products:', storeProducts);
@@ -26,7 +36,7 @@ export async function updateStoreItemPrice({ accessToken, newPrice }: { accessTo
       ...product,
       priceData: {
         ...product.priceData,
-        price: (product.priceData?.price ?? 0) + newPrice,
+        price: (product.priceData?.price ?? 0) + goldPrice + silverPrice + platinumPrice,
       },
       lastUpdated: new Date(),
     }));
