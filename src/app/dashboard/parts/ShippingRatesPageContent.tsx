@@ -33,7 +33,6 @@ export const ShippingRatesPageContent = ({}: {}) => {
   // const [currencyPrefix, setCurrencyPrefix] = useState('$');
 
   const accessTokenPromise = useAccessToken();
-  const [hasWixAccessToken, setHasWixAccessToken] = useState(false);
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -103,31 +102,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   // auth is handled by useSupabaseAuth hook which subscribes to auth state and visibility
 
-  // consider the user signed in if either Supabase session exists OR
-  // there's a Wix dashboard access token available (fallback for iframe storage blocks)
-  const effectiveSignedIn = isSignedIn || hasWixAccessToken;
-
-  // resolve Wix access token once and use it as a fallback sign-in indicator
+  // when signed in, load dashboard data
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const token = await accessTokenPromise;
-        if (!mounted) return;
-        if (token) setHasWixAccessToken(true);
-      } catch (e) {
-        // ignore
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [accessTokenPromise]);
-
-  // when signed in (either mechanism), load dashboard data
-  useEffect(() => {
-    if (effectiveSignedIn) void loadDashboardData();
-  }, [effectiveSignedIn, loadDashboardData]);
+    if (isSignedIn) void loadDashboardData();
+  }, [isSignedIn, loadDashboardData]);
 
   const setUomForMethod = useCallback(
     (code: string) => (type: ShippingUnitOfMeasure) => {
