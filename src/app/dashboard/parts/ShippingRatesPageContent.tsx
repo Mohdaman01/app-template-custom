@@ -12,6 +12,7 @@ import testIds from '@/app/utils/test-ids';
 import { UpdatePriceForm } from './UpdatePriceForm';
 import { createClient } from '@/app/utils/supabase/client';
 import { AuthSignIn } from './AuthSignIn';
+import { useSupabaseAuth } from '@/app/client-hooks/useSupabaseAuth';
 
 export const ShippingRatesPageContent = ({}: {}) => {
   const {
@@ -28,8 +29,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const [platinumPrice, setPlatinumPrice] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [isSignedIn, setIsSignedIn] = useState(false);
+  const { isSignedIn, loading: authLoading, signOut } = useSupabaseAuth();
   // const [currencyPrefix, setCurrencyPrefix] = useState('$');
 
   const accessTokenPromise = useAccessToken();
@@ -100,20 +100,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
     })();
   }, [accessTokenPromise, goldPrice, silverPrice, platinumPrice, showToast]);
 
-  // initial auth check and data load
-  useEffect(() => {
-    (async () => {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getUser();
-        setIsSignedIn(Boolean(data?.user));
-      } catch (e) {
-        console.error('Error checking auth state:', e);
-      } finally {
-        setAuthChecked(true);
-      }
-    })();
-  }, []);
+  // auth is handled by useSupabaseAuth hook which subscribes to auth state and visibility
 
   // when signed in, load dashboard data
   useEffect(() => {
@@ -156,9 +143,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
               skin='standard'
               onClick={async () => {
                 try {
-                  const supabase = createClient();
-                  await supabase.auth.signOut();
-                  setIsSignedIn(false);
+                  await signOut();
                   showToast({ message: 'Signed out', type: 'success' });
                 } catch (e) {
                   console.error('Error signing out:', e);
@@ -172,7 +157,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         ) : null}
       </Box>
     ),
-    [isSignedIn, onSave, loading, showToast],
+    [isSignedIn, onSave, loading, showToast, signOut],
   );
 
   return (
@@ -195,7 +180,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       <Page.Content>
         <Layout>
           <Cell span={8}>
-            {!authChecked ? (
+            {authLoading ? (
               <Layout cols={1} alignItems='center' justifyItems='center'>
                 <Cell>
                   <Box width='100%' height='20vh' verticalAlign='middle'>
@@ -208,7 +193,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 <Cell>
                   <AuthSignIn
                     onSuccess={() => {
-                      setIsSignedIn(true);
+                      // auth hook will pick up new session and update state
                       showToast({ message: 'Signed in', type: 'success' });
                     }}
                   />

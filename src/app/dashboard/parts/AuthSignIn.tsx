@@ -93,7 +93,7 @@ export const AuthSignIn = ({ onSuccess }: { onSuccess?: () => void }) => {
   return (
     <Box direction='vertical' gap='SP6' width='100%' maxWidth={520} padding='SP6'>
       <Text weight='normal' size='medium'>
-        {mode === 'signin' ? 'Sign in to Supabase' : 'Create a new account'}
+        {mode === 'signin' ? 'Sign In' : 'Create a new account'}
       </Text>
 
       <Layout>
