@@ -5,7 +5,10 @@
 /.pnp
 .pnp.js
 .yarn/install-state.gz
-/.vscode
+.vscode
+
+// dummy data file
+dummy.js
 
 # testing
 /coverage

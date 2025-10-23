@@ -3,64 +3,78 @@ import { Box, Breadcrumbs, Button, Cell, Layout, Loader, Page } from '@wix/desig
 import { useSDK } from '@/app/utils/wix-sdk.client-only';
 import { useCallback, useEffect, useState } from 'react';
 import { useAccessToken } from '@/app/client-hooks/access-token';
-// import { ActivationDetailsCard } from '@/app/dashboard/parts/ActivationDetailsCard';
-// import { ShippingDeliveryMethodForm } from '@/app/dashboard/parts/ShippingDeliveryMethodForm';
 import { ShippingAppData, ShippingCosts, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
-// import { ShippingMethodSummary } from '@/app/dashboard/parts/ShippingMethodSummary';
 import { WixPageId } from '@/app/utils/navigation.const';
 import { useShippingAppData } from '@/app/client-hooks/app-data';
 import { updateStoreItemPrice } from '@/app/actions/store';
 import { getAppInstance } from '@/app/actions/app-data';
 import testIds from '@/app/utils/test-ids';
 import { UpdatePriceForm } from './UpdatePriceForm';
-// import { cookies } from 'next/headers';
 import { createClient } from '@/app/utils/supabase/client';
+import { AuthSignIn } from './AuthSignIn';
 
 export const ShippingRatesPageContent = ({}: {}) => {
   const {
     dashboard: { showToast, navigate },
   } = useSDK();
-  // const persistShippingAppData = useSetShippingAppData();
+
   const { data: persistedShippingAppData, isLoading: isLoadingAppData } = useShippingAppData();
   const [currentShippingAppData, setCurrentShippingAppData] = useState<ShippingAppData | undefined>(
     persistedShippingAppData,
   );
 
-  const [priceAppData, setPriceAppData] = useState(0);
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [silverPrice, setSilverPrice] = useState<number | null>(null);
   const [platinumPrice, setPlatinumPrice] = useState<number | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [currencyPrefix, setCurrencyPrefix] = useState('$');
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  // const [currencyPrefix, setCurrencyPrefix] = useState('$');
 
   const accessTokenPromise = useAccessToken();
+
+  const loadDashboardData = useCallback(async () => {
+    try {
+      const accessToken = (await accessTokenPromise)!;
+      const appInstance = await getAppInstance({ accessToken });
+      const instanceId = appInstance?.instance?.instanceId;
+      const supabase = createClient();
+      const { data: rules, error } = await supabase
+        .from('Dashboard Rules')
+        .select('*')
+        .eq('instance_id', instanceId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Failed to fetch dashboard rules', error);
+        return;
+      }
+
+      if (rules?.goldPrice) setGoldPrice(rules.goldPrice);
+      if (rules?.silverPrice) setSilverPrice(rules.silverPrice);
+      if (rules?.platinumPrice) setPlatinumPrice(rules.platinumPrice);
+    } catch (e) {
+      console.error('Error loading dashboard data', e);
+    }
+  }, [accessTokenPromise]);
 
   const onSave = useCallback(() => {
     setLoading(true);
     (async () => {
       try {
-        console.log('Saving prices:', { goldPrice, silverPrice, platinumPrice });
         const accessToken = (await accessTokenPromise)!;
-        // console.log('Access Token:', accessToken);
-        // console.log('Price to update:', priceAppData);
-
         const appInstance = await getAppInstance({ accessToken });
-        console.log('App Instance:', appInstance);
         const instanceId = appInstance?.instance?.instanceId;
         const supabase = createClient();
 
-        if (!instanceId) {
-          throw new Error('Missing instanceId when trying to update Dashboard Rules');
-        }
+        if (!instanceId) throw new Error('Missing instanceId when trying to update Dashboard Rules');
 
-        // Build payload only with values that are non-null (avoid setting columns to null accidentally)
         const payload: Record<string, any> = {};
         if (goldPrice !== null) payload.goldPrice = goldPrice;
         if (silverPrice !== null) payload.silverPrice = silverPrice;
         if (platinumPrice !== null) payload.platinumPrice = platinumPrice;
 
-        // Try to update an existing row matching the instance_id
         const { data: rules, error } = await supabase
           .from('Dashboard Rules')
           .update(payload)
@@ -68,12 +82,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
           .select()
           .maybeSingle();
 
-        if (error) {
-          console.error('Failed to update Dashboard Rules:', error);
-          throw error;
-        }
-
-        console.log('Updated dashboard rule in Supabase:', rules);
+        if (error) throw error;
 
         await updateStoreItemPrice({
           accessToken,
@@ -81,128 +90,91 @@ export const ShippingRatesPageContent = ({}: {}) => {
           silverPrice: silverPrice!,
           platinumPrice: platinumPrice!,
         });
-        showToast({
-          message: 'Prices updated successfully.',
-          type: 'success',
-        });
+        showToast({ message: 'Prices updated successfully.', type: 'success' });
       } catch (e) {
         console.error('Error updating prices:', e);
-        showToast({
-          message: 'Failed to update Prices.',
-          type: 'error',
-        });
+        showToast({ message: 'Failed to update Prices.', type: 'error' });
       } finally {
         setLoading(false);
       }
     })();
-  }, [accessTokenPromise, goldPrice, silverPrice, platinumPrice, priceAppData, showToast]);
+  }, [accessTokenPromise, goldPrice, silverPrice, platinumPrice, showToast]);
 
-  // read site currency from client SDK when available and map to a symbol
+  // initial auth check and data load
   useEffect(() => {
-    const loadCurrency = async () => {
+    (async () => {
       try {
-        // const sdk = useSDK();
-        // // sdk.site may be undefined depending on runtime; guard before calling
-        // // @ts-ignore
-        // const currency = typeof sdk?.site?.currency === 'function' ? await sdk.site.currency() : undefined;
-        // const symbolMap: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', INR: '₹' };
-        // setCurrencyPrefix(currency && symbolMap[currency] ? symbolMap[currency] : '$');
-        console.log('Loading site currency and app instance in useEffect');
-        const accessToken = (await accessTokenPromise)!;
-        const appInstance = await getAppInstance({ accessToken });
-        console.log('App Instance:', appInstance);
-
-        const instanceId = appInstance?.instance?.instanceId;
-
         const supabase = createClient();
-
-        const { data: rules, error } = await supabase
-          .from('Dashboard Rules')
-          .select('*')
-          .eq('instance_id', instanceId)
-          .maybeSingle();
-        console.log('Fetched dashboard rule from Supabase:', rules);
-        if (rules?.goldPrice) {
-          setGoldPrice(rules?.goldPrice);
-        }
-        if (rules?.silverPrice) {
-          setSilverPrice(rules?.silverPrice);
-        }
-        if (rules?.platinumPrice) {
-          setPlatinumPrice(rules?.platinumPrice);
-        }
-
-        if (error) {
-          console.error('Webhook::install - failed to upsert dashboard rule', error);
-          throw Error(error.message);
-        }
+        const { data } = await supabase.auth.getUser();
+        setIsSignedIn(Boolean(data?.user));
       } catch (e) {
-        // keep default
-        console.error('Error loading site currency or app instance:', e);
+        console.error('Error checking auth state:', e);
+      } finally {
+        setAuthChecked(true);
       }
-    };
-    void loadCurrency();
-  }, [accessTokenPromise]);
+    })();
+  }, []);
+
+  // when signed in, load dashboard data
+  useEffect(() => {
+    if (isSignedIn) void loadDashboardData();
+  }, [isSignedIn, loadDashboardData]);
 
   const setUomForMethod = useCallback(
     (code: string) => (type: ShippingUnitOfMeasure) => {
-      setCurrentShippingAppData({
-        ...currentShippingAppData,
-        shippingMethods: currentShippingAppData!.shippingMethods.map((m) =>
+      setCurrentShippingAppData((prev) => ({
+        ...(prev as ShippingAppData),
+        shippingMethods: (prev!.shippingMethods || []).map((m) =>
           m.code === code ? { ...m, unitOfMeasure: type } : m,
         ),
-      });
+      }));
     },
-    [currentShippingAppData],
-  );
-  const setCostsForMethod = useCallback(
-    (code: string) => (costs: ShippingCosts) => {
-      setCurrentShippingAppData({
-        ...currentShippingAppData,
-        shippingMethods: currentShippingAppData!.shippingMethods.map((m) => (m.code === code ? { ...m, costs } : m)),
-      });
-    },
-    [currentShippingAppData],
+    [],
   );
 
-  const setUpdatedGoldPriceForMethod = useCallback(
-    (newPrice: number) => {
-      setGoldPrice(newPrice);
-      // Log the value we just set (don't read outer closure `goldPrice` which may be stale)
-      console.log('Setting Gold Price to:', newPrice);
+  const setCostsForMethod = useCallback(
+    (code: string) => (costs: ShippingCosts) => {
+      setCurrentShippingAppData((prev) => ({
+        ...(prev as ShippingAppData),
+        shippingMethods: (prev!.shippingMethods || []).map((m) => (m.code === code ? { ...m, costs } : m)),
+      }));
     },
-    [setGoldPrice],
+    [],
   );
-  const setUpdatedSilverPriceForMethod = useCallback(
-    (newPrice: number) => {
-      setSilverPrice(newPrice);
-      console.log('Setting Silver Price to:', newPrice);
-    },
-    [setSilverPrice],
-  );
-  const setUpdatedPlatinumPriceForMethod = useCallback(
-    (newPrice: number) => {
-      setPlatinumPrice(newPrice);
-      console.log('Setting Platinum Price to:', newPrice);
-    },
-    [setPlatinumPrice],
-  );
+
+  const setUpdatedGoldPriceForMethod = useCallback((newPrice: number) => setGoldPrice(newPrice), []);
+  const setUpdatedSilverPriceForMethod = useCallback((newPrice: number) => setSilverPrice(newPrice), []);
+  const setUpdatedPlatinumPriceForMethod = useCallback((newPrice: number) => setPlatinumPrice(newPrice), []);
 
   const ButtonsBar = useCallback(
     () => (
       <Box gap='SP2'>
-        {/* <Button
-          skin='standard'
-          priority='secondary'
-          onClick={() => setCurrentShippingAppData(persistedShippingAppData)}
-        >
-          Cancel
-        </Button> */}
-        <Button onClick={onSave}>{loading ? <Loader size='tiny' /> : 'Save'}</Button>
+        {isSignedIn ? (
+          <>
+            <Button onClick={onSave}>{loading ? <Loader size='tiny' /> : 'Save'}</Button>
+            <Button
+              skin='standard'
+              onClick={async () => {
+                try {
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  setIsSignedIn(false);
+                  showToast({ message: 'Signed out', type: 'success' });
+                } catch (e) {
+                  console.error('Error signing out:', e);
+                  showToast({ message: 'Failed to sign out', type: 'error' });
+                }
+              }}
+            >
+              Sign out
+            </Button>
+          </>
+        ) : null}
       </Box>
     ),
-    [loading, onSave],
+    [isSignedIn, onSave, loading, showToast],
   );
+
   return (
     <Page height='100vh' dataHook={testIds.DASHBOARD.WRAPPER}>
       <Page.Header
@@ -223,7 +195,26 @@ export const ShippingRatesPageContent = ({}: {}) => {
       <Page.Content>
         <Layout>
           <Cell span={8}>
-            {isLoadingAppData ? (
+            {!authChecked ? (
+              <Layout cols={1} alignItems='center' justifyItems='center'>
+                <Cell>
+                  <Box width='100%' height='20vh' verticalAlign='middle'>
+                    <Loader size='large' />
+                  </Box>
+                </Cell>
+              </Layout>
+            ) : !isSignedIn ? (
+              <Layout cols={1} alignItems='center' justifyItems='center'>
+                <Cell>
+                  <AuthSignIn
+                    onSuccess={() => {
+                      setIsSignedIn(true);
+                      showToast({ message: 'Signed in', type: 'success' });
+                    }}
+                  />
+                </Cell>
+              </Layout>
+            ) : isLoadingAppData ? (
               <Layout cols={1} alignItems='center' justifyItems='center'>
                 <Cell>
                   <Box width='100%' height='20vh' verticalAlign='middle'>
@@ -233,26 +224,21 @@ export const ShippingRatesPageContent = ({}: {}) => {
               </Layout>
             ) : (
               <Layout>
-                {/* {currentShippingAppData?.shippingMethods.map((method, index) => ( */}
                 <Cell key={1}>
                   <UpdatePriceForm
                     price={goldPrice ?? 0}
-                    // expandByDefault={0}
                     title='Gold Price'
                     unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
                     onUnitOfMeasureSelected={setUomForMethod('1')}
                     shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
                     onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
-                      console.log('New Gold Price to set in store:', newPrice);
                       setUpdatedGoldPriceForMethod(newPrice);
                     }}
-                    // methodType=
                   />
                 </Cell>
                 <Cell key={2}>
                   <UpdatePriceForm
-                    // expandByDefault={0}
                     title='Silver Price'
                     price={silverPrice ?? 0}
                     unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
@@ -260,15 +246,12 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
                     onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
-                      console.log('New Silver Price to set in store:', newPrice);
                       setUpdatedSilverPriceForMethod(newPrice);
                     }}
-                    // methodType=
                   />
                 </Cell>
                 <Cell key={3}>
                   <UpdatePriceForm
-                    // expandByDefault={0}
                     title='Platinum Price'
                     price={platinumPrice ?? 0}
                     unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
@@ -276,24 +259,13 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
                     onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
-                      console.log('New Platinum Price to set in store:', newPrice);
                       setUpdatedPlatinumPriceForMethod(newPrice);
                     }}
-                    // methodType=
                   />
                 </Cell>
-                {/* ))} */}
-                {/* <Cell>
-                  <ActivationDetailsCard />
-                </Cell> */}
               </Layout>
             )}
           </Cell>
-          {/* <Cell span={4}>
-            <Page.Sticky>
-              <ShippingMethodSummary />
-            </Page.Sticky>
-          </Cell> */}
         </Layout>
       </Page.Content>
     </Page>
