@@ -11,6 +11,10 @@ export async function POST(request: NextRequest) {
     expectedEvents: [wixAppClient.webhooks.apps.AppInstalled],
   });
 
+  const accessTokenPromise = useAccessToken();
+  const accessToken = (await accessTokenPromise)!;
+  console.log('accessToken:', accessToken);
+
   console.info('Webhook::install - input is:', {
     eventType,
     instanceId,
@@ -41,11 +45,6 @@ export async function POST(request: NextRequest) {
     return new Response(JSON.stringify({ ok: false, error: String(err) }), { status: 500 });
   }
 
-  // After creating the dashboard rule, initialize the schema plugin fields for store products
-
-  const accessTokenPromise = useAccessToken();
-  const accessToken = (await accessTokenPromise)!;
-  console.log('accessToken:', accessToken);
   // For webhook calls, we can use the app secret directly since this is server-to-server
   const sdk = createSdk(accessToken);
 
