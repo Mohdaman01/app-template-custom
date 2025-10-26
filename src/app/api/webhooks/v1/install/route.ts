@@ -2,10 +2,9 @@ import { wixAppClient } from '@/app/utils/wix-sdk.app';
 import { type NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient, createServiceClient } from '@/app/utils/supabase/server';
-import { createSdk } from '@/app/utils/wix-sdk';
 import { createClient as wixClient } from '@wix/sdk/client';
 import { AppStrategy } from '@wix/sdk/auth/wix-app-oauth';
-import { products as Products, productsV3 as ProdcutsV3 } from '@wix/stores';
+import { products as Products, productsV3 as ProdcutsV3, catalogVersioning } from '@wix/stores';
 
 export async function POST(request: NextRequest) {
   console.info('Webhook::install - called');
@@ -28,14 +27,25 @@ export async function POST(request: NextRequest) {
       publicKey: process.env.WIX_APP_JWT_KEY,
       instanceId: instanceId,
     }),
-    modules: { Products, ProdcutsV3 },
+    modules: { Products, ProdcutsV3, catalogVersioning },
   });
 
   console.log('after app client');
 
-  const { items } = await appClient.Products.queryProducts().limit(4).find();
+  const { items } = await appClient.Products.queryProducts().find();
 
   console.log('items from site: ', items);
+
+  const { catalogVersion } = await appClient.catalogVersioning.getCatalogVersion();
+  console.log('storeVersion is: ', catalogVersion);
+
+  let version: 'v1' | 'v3';
+
+  if (catalogVersion === appClient.catalogVersioning.Version.V1_CATALOG) {
+    version = 'v1';
+  } else {
+    version = 'v3';
+  }
 
   try {
     // First, create the dashboard rule
@@ -72,7 +82,7 @@ export async function POST(request: NextRequest) {
       const tempProdcut = await appClient.ProdcutsV3.getProduct(product._id);
       console.log('tempProdcut is: ', tempProdcut);
       const revision = tempProdcut.revision;
-      const response = await fetch(`https://www.wixapis.com/stores/v3/products/${product._id}`, {
+      const response = await fetch(`https://www.wixapis.com/stores/${version}/products/${product._id}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${process.env.WIX_APP_SECRET!}`,
