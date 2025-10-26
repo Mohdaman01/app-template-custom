@@ -62,15 +62,9 @@ export async function POST(request: NextRequest) {
   }
 
   // For webhook calls, we can use the app secret directly since this is server-to-server
-  const sdk = createSdk(process.env.WIX_APP_SECRET!);
-
-  // Get all products
-  const products = await sdk.products.queryProducts().find();
-
-  console.log('Fetched products for extended fields initialization:', products.items.length);
   try {
     // Update each product with the extended fields using REST API
-    for (const product of products.items) {
+    for (const product of items) {
       const response = await fetch(`https://www.wixapis.com/stores/v3/products/${product._id}`, {
         method: 'PATCH',
         headers: {
