@@ -3,7 +3,9 @@ import { type NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient, createServiceClient } from '@/app/utils/supabase/server';
 import { createSdk } from '@/app/utils/wix-sdk';
-import { useAccessToken } from '@/app/client-hooks/access-token';
+import { createClient as wixClient } from '@wix/sdk/client';
+import { AppStrategy } from '@wix/sdk/auth/wix-app-oauth';
+import { products as Products } from '@wix/stores';
 
 export async function POST(request: NextRequest) {
   console.info('Webhook::install - called');
@@ -11,15 +13,29 @@ export async function POST(request: NextRequest) {
     expectedEvents: [wixAppClient.webhooks.apps.AppInstalled],
   });
 
-  const accessTokenPromise = useAccessToken();
-  const accessToken = (await accessTokenPromise)!;
-  console.log('accessToken:', accessToken);
-
   console.info('Webhook::install - input is:', {
     eventType,
     instanceId,
     payload,
   });
+
+  console.log('Before appClient');
+
+  const appClient = wixClient({
+    auth: AppStrategy({
+      appId: process.env.WIX_APP_ID!,
+      appSecret: process.env.WIX_APP_SECRET!,
+      publicKey: process.env.WIX_APP_JWT_KEY,
+      instanceId: instanceId,
+    }),
+    modules: { Products },
+  });
+
+  console.log('after app client');
+
+  const { items } = await appClient.Products.queryProducts().startsWith('name', 'shoes').limit(4).find();
+
+  console.log('items from site: ', items);
 
   try {
     // First, create the dashboard rule
@@ -46,7 +62,7 @@ export async function POST(request: NextRequest) {
   }
 
   // For webhook calls, we can use the app secret directly since this is server-to-server
-  const sdk = createSdk(accessToken);
+  const sdk = createSdk(process.env.WIX_APP_SECRET!);
 
   // Get all products
   const products = await sdk.products.queryProducts().find();
