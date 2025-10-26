@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
   let version: 'v1' | 'v3';
 
-  if (catalogVersion === appClient.catalogVersioning.Version.V1_CATALOG) {
+  if (catalogVersion === 'V1_CATALOG') {
     version = 'v1';
   } else {
     version = 'v3';
