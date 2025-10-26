@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
     version = 'v3';
   }
 
+  console.log('Determined version: ', version);
+
   try {
     // First, create the dashboard rule
     const cookieStore = await cookies();
