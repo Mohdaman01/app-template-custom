@@ -5,7 +5,7 @@ import { createClient, createServiceClient } from '@/app/utils/supabase/server';
 import { createSdk } from '@/app/utils/wix-sdk';
 import { createClient as wixClient } from '@wix/sdk/client';
 import { AppStrategy } from '@wix/sdk/auth/wix-app-oauth';
-import { products as Products } from '@wix/stores';
+import { products as Products, productsV3 as ProdcutsV3 } from '@wix/stores';
 
 export async function POST(request: NextRequest) {
   console.info('Webhook::install - called');
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       publicKey: process.env.WIX_APP_JWT_KEY,
       instanceId: instanceId,
     }),
-    modules: { Products },
+    modules: { Products, ProdcutsV3 },
   });
 
   console.log('after app client');
@@ -65,6 +65,13 @@ export async function POST(request: NextRequest) {
   try {
     // Update each product with the extended fields using REST API
     for (const product of items) {
+      if (!product._id) {
+        console.warn('Skipping product without ID');
+        continue;
+      }
+      const tempProdcut = await appClient.ProdcutsV3.getProduct(product._id);
+      console.log('tempProdcut is: ', tempProdcut);
+      const revision = tempProdcut.revision;
       const response = await fetch(`https://www.wixapis.com/stores/v3/products/${product._id}`, {
         method: 'PATCH',
         headers: {
@@ -72,11 +79,15 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          extendedFields: {
-            namespaces: {
-              // Replace with your app's namespace from the schema plugin
-              '@wixfreaks/test-shipping-example': {
-                MetalType: '',
+          product: {
+            id: product._id,
+            revision: revision,
+            extendedFields: {
+              namespaces: {
+                // Replace with your app's namespace from the schema plugin
+                '@wixfreaks/test-shipping-example': {
+                  MetalType: '',
+                },
               },
             },
           },
