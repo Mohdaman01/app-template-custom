@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
   console.log('after app client');
 
-  const { items } = await appClient.Products.queryProducts().startsWith('name', 'shoes').limit(4).find();
+  const { items } = await appClient.Products.queryProducts().limit(4).find();
 
   console.log('items from site: ', items);
 
