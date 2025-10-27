@@ -1,6 +1,6 @@
 import { createClient } from '@wix/sdk/client';
 import { orders } from '@wix/ecom';
-import { products } from '@wix/stores';
+import { products, productsV3, catalogVersioning } from '@wix/stores';
 import { appInstances } from '@wix/app-management';
 
 // This utility function initializes and returns a Wix SDK client for in server and client components.
@@ -19,5 +19,7 @@ export const createSdk = (accessToken: string) =>
       orders,
       products,
       appInstances,
+      productsV3,
+      catalogVersioning,
     },
   });

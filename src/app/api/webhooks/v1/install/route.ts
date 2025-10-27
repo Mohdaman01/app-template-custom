@@ -82,33 +82,51 @@ export async function POST(request: NextRequest) {
         continue;
       }
       const tempProdcut = await appClient.ProdcutsV3.getProduct(product._id);
-      console.log('tempProdcut is: ', tempProdcut);
       const revision = tempProdcut.revision;
-      const response = await fetch(`https://www.wixapis.com/stores/${version}/products/${product._id}`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${process.env.WIX_APP_SECRET!}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          product: {
-            id: product._id,
-            revision: revision,
-            extendedFields: {
-              namespaces: {
-                // Replace with your app's namespace from the schema plugin
-                '@wixfreaks/test-shipping-example': {
-                  MetalType: '',
-                },
-              },
+
+      if (version !== 'v3') {
+        throw new Error(`Unsupported catalog version: ${version}`);
+      }
+
+      const response = await appClient.ProdcutsV3.updateProduct(product._id, {
+        revision: revision,
+        extendedFields: {
+          namespaces: {
+            // Replace with your app's namespace from the schema plugin
+            '@wixfreaks/test-shipping-example': {
+              MetalType: 'Gold',
             },
           },
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to update product ${product._id}: ${await response.text()}`);
-      }
+      console.log(`Updated product ${product._id} with response: `, response);
+
+      // const response = await fetch(`https://www.wixapis.com/stores/${version}/products/${product._id}`, {
+      //   method: 'PATCH',
+      //   headers: {
+      //     Authorization: `Bearer ${process.env.WIX_APP_SECRET!}`,
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({
+      //     product: {
+      //       id: product._id,
+      //       revision: revision,
+      //       extendedFields: {
+      //         namespaces: {
+      //           // Replace with your app's namespace from the schema plugin
+      //           '@wixfreaks/test-shipping-example': {
+      //             MetalType: '',
+      //           },
+      //         },
+      //       },
+      //     },
+      //   }),
+      // });
+
+      // if (!response) {
+      //   throw new Error(`Failed to update product ${product._id}: ${await response.text()}`);
+      // }
     }
 
     console.info('Webhook::install - initialized product extended fields');
