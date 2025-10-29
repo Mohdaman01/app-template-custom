@@ -75,6 +75,9 @@ export async function POST(request: NextRequest) {
 
   // For webhook calls, we can use the app secret directly since this is server-to-server
   try {
+    if (version !== 'v3') {
+      throw new Error(`Unsupported catalog version: ${version}`);
+    }
     // Update each product with the extended fields using REST API
     for (const product of items) {
       if (!product._id) {
@@ -83,10 +86,6 @@ export async function POST(request: NextRequest) {
       }
       const tempProdcut = await appClient.ProdcutsV3.getProduct(product._id);
       const revision = tempProdcut.revision;
-
-      if (version !== 'v3') {
-        throw new Error(`Unsupported catalog version: ${version}`);
-      }
 
       const response = await appClient.ProdcutsV3.updateProduct(product._id, {
         revision: revision,
