@@ -74,17 +74,35 @@ export async function updateStoreItemPrice({
     } else if (version.catalogVersion === 'V3_CATALOG') {
       // V3 Catalog: Update price at variant level using bulkUpdateProductsWithInventory
       // In V3, prices are stored in variants, not at product level
-      const storeProducts = await sdk.productsV3
-        .queryProducts()
-        .find()
-        .then((res) => res.items);
 
-      console.log('Fetched V3 store products:', storeProducts);
+      // First, query to get product IDs
+      const queryResult = await sdk.productsV3.queryProducts().find();
+
+      const productIds = queryResult.items.map((item) => item._id).filter(Boolean) as string[];
+
+      console.log('Fetched V3 product IDs:', productIds.length);
+
+      // Fetch full product details using getProduct() to get variantsInfo
+      const fullProducts = await Promise.all(
+        productIds.map(async (productId) => {
+          try {
+            const productData = await sdk.productsV3.getProduct(productId);
+            return productData;
+          } catch (error) {
+            console.error(`Failed to fetch product ${productId}:`, error);
+            return null;
+          }
+        }),
+      );
+
+      // Filter out null results
+      const validProducts = fullProducts.filter(Boolean);
+      console.log('Fetched full V3 products:', validProducts.length);
 
       // Prepare products for bulk update with correct structure
-      const productsToUpdate = storeProducts.map((product) => {
+      const productsToUpdate = validProducts.map((product) => {
         // Get all variants for this product
-        const variants = product.variantsInfo?.variants || [];
+        const variants = product?.variantsInfo?.variants || [];
 
         // Update each variant's price with correct structure
         const updatedVariants = variants.map((variant) => {
@@ -103,8 +121,8 @@ export async function updateStoreItemPrice({
 
         return {
           product: {
-            _id: product._id,
-            revision: String((Number(product.revision) || 0) + 1), // Increment revision
+            _id: product?._id,
+            revision: String((Number(product?.revision) || 0) + 1), // Increment revision
             variantsInfo: {
               variants: updatedVariants,
             },
