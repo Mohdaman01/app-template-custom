@@ -135,7 +135,7 @@ export async function updateStoreItemPrice({
         };
       });
 
-      console.log('Prepared products for bulk update:', productsToUpdate.length);
+      console.log('Prepared products for bulk update:', productsToUpdate);
 
       // Use bulkUpdateProductsWithInventory to update all products
       // Process in batches of 100 (API limit)
