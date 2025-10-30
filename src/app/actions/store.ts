@@ -97,7 +97,7 @@ export async function updateStoreItemPrice({
 
       // Filter out null results
       const validProducts = fullProducts.filter(Boolean);
-      console.log('Fetched full V3 products:', validProducts.length);
+      console.log('Fetched full V3 products:', validProducts);
 
       // Prepare products for bulk update with correct structure
       const productsToUpdate = validProducts.map((product) => {
@@ -110,9 +110,12 @@ export async function updateStoreItemPrice({
           const newPrice = currentPrice + totalPriceIncrement;
 
           return {
+            ...variant,
             _id: variant._id,
             price: {
+              ...variant?.price,
               actualPrice: {
+                ...variant?.price?.actualPrice,
                 amount: newPrice.toFixed(2).toString(), // Must be string format
               },
             },
@@ -125,6 +128,7 @@ export async function updateStoreItemPrice({
             revision: product?.revision,
             options: product?.options,
             variantsInfo: {
+              ...product?.variantsInfo,
               variants: updatedVariants,
             },
           },
