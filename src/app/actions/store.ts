@@ -142,9 +142,9 @@ export async function updateStoreItemPrice({
         const batch = productsToUpdate.slice(i, i + batchSize);
 
         // Call with correct signature: array and empty options object
-        const batchResult = await sdk.productsV3.bulkUpdateProducts(batch);
+        const batchResult = await sdk.productsV3.bulkUpdateProductsWithInventory(batch, {});
 
-        results.push(...(batchResult.results || []));
+        results.push(...(batchResult?.productResults?.results || []));
       }
 
       // Extract updated products from results
