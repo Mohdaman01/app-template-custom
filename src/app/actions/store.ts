@@ -122,13 +122,16 @@ export async function updateStoreItemPrice({
         return {
           product: {
             _id: product?._id,
-            revision: String((Number(product?.revision) || 0) + 1), // Increment revision
+            revision: product?.revision,
+            options: product?.options,
             variantsInfo: {
               variants: updatedVariants,
             },
           },
         };
       });
+
+      console.log('Prepared products for bulk update:', productsToUpdate.length);
 
       // Use bulkUpdateProductsWithInventory to update all products
       // Process in batches of 100 (API limit)
@@ -139,9 +142,9 @@ export async function updateStoreItemPrice({
         const batch = productsToUpdate.slice(i, i + batchSize);
 
         // Call with correct signature: array and empty options object
-        const batchResult = await sdk.productsV3.bulkUpdateProductsWithInventory(batch, {});
+        const batchResult = await sdk.productsV3.bulkUpdateProducts(batch);
 
-        results.push(...(batchResult.productResults?.results || []));
+        results.push(...(batchResult.results || []));
       }
 
       // Extract updated products from results
