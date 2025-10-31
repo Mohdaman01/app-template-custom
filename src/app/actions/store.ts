@@ -110,7 +110,9 @@ export async function updateStoreItemPrice({
 
           return {
             ...variant,
-            choices: variant.choices?.map((choice) => choice),
+            choices: variant.choices?.map((choice) => {
+              return { ...choice, optionId: choice.optionChoiceIds?.optionId };
+            }),
             _id: variant._id,
             price: {
               ...variant?.price,
