@@ -110,6 +110,7 @@ export async function updateStoreItemPrice({
 
           return {
             ...variant,
+            choices: variant.choices?.map((choice) => choice),
             _id: variant._id,
             price: {
               ...variant?.price,
@@ -137,7 +138,7 @@ export async function updateStoreItemPrice({
         };
       });
 
-      console.log('Prepared products for bulk update:', JSON.stringify(productsToUpdate, null, 2));
+      console.log('Prepared products for bulk update:', productsToUpdate);
 
       // Use bulkUpdateProductsWithInventory to update all products
       // Process in batches of 100 (API limit)
@@ -147,20 +148,15 @@ export async function updateStoreItemPrice({
       for (let i = 0; i < productsToUpdate.length; i += batchSize) {
         const batch = productsToUpdate.slice(i, i + batchSize);
 
-        try {
-          // Call with correct signature: array and empty options object
-          const batchResult = await sdk.productsV3.bulkUpdateProductsWithInventory(batch, {});
-          results.push(...(batchResult?.productResults?.results || []));
-        } catch (error) {
-          console.error('Batch update failed:', error);
-          // Continue with other batches even if one fails
-        }
+        // Call with correct signature: array and empty options object
+        const batchResult = await sdk.productsV3.bulkUpdateProductsWithInventory(batch, {});
+        results.push(...(batchResult?.productResults?.results || []));
       }
 
       // Extract updated products from results
       const updatedProducts = results.filter((result) => result.item).map((result) => result.item);
 
-      console.log('Successfully updated V3 products:', updatedProducts.length);
+      console.log('Successfully updated V3 products:', updatedProducts);
       return updatedProducts;
     }
 
