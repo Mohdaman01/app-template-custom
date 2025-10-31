@@ -73,16 +73,15 @@ export async function updateStoreItemPrice({
       return updatedProducts;
     } else if (version.catalogVersion === 'V3_CATALOG') {
       // V3 Catalog: Update price at variant level using bulkUpdateProductsWithInventory
-      // In V3, prices are stored in variants, not at product level
+      // CRITICAL: Must include options array - variants choices must reference existing options
 
       // First, query to get product IDs
       const queryResult = await sdk.productsV3.queryProducts().find();
-
       const productIds = queryResult.items.map((item) => item._id).filter(Boolean) as string[];
 
       console.log('Fetched V3 product IDs:', productIds.length);
 
-      // Fetch full product details using getProduct() to get variantsInfo
+      // Fetch full product details using getProduct() to get variantsInfo AND options
       const fullProducts = await Promise.all(
         productIds.map(async (productId) => {
           try {
@@ -122,11 +121,14 @@ export async function updateStoreItemPrice({
           };
         });
 
+        // CRITICAL FIX: Include the options array
+        // Every variant's choices.optionId must exist in options.id
         return {
           product: {
             _id: product?._id,
             revision: product?.revision,
-            options: product?.options,
+            // Include options - this is required for variant choices validation
+            options: product?.options || [],
             variantsInfo: {
               ...product?.variantsInfo,
               variants: updatedVariants,
@@ -135,7 +137,7 @@ export async function updateStoreItemPrice({
         };
       });
 
-      console.log('Prepared products for bulk update:', productsToUpdate);
+      console.log('Prepared products for bulk update:', JSON.stringify(productsToUpdate, null, 2));
 
       // Use bulkUpdateProductsWithInventory to update all products
       // Process in batches of 100 (API limit)
@@ -145,10 +147,14 @@ export async function updateStoreItemPrice({
       for (let i = 0; i < productsToUpdate.length; i += batchSize) {
         const batch = productsToUpdate.slice(i, i + batchSize);
 
-        // Call with correct signature: array and empty options object
-        const batchResult = await sdk.productsV3.bulkUpdateProductsWithInventory(batch, {});
-
-        results.push(...(batchResult?.productResults?.results || []));
+        try {
+          // Call with correct signature: array and empty options object
+          const batchResult = await sdk.productsV3.bulkUpdateProductsWithInventory(batch, {});
+          results.push(...(batchResult?.productResults?.results || []));
+        } catch (error) {
+          console.error('Batch update failed:', error);
+          // Continue with other batches even if one fails
+        }
       }
 
       // Extract updated products from results
