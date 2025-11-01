@@ -6,10 +6,11 @@ import { useAccessToken } from '@/app/client-hooks/access-token';
 import { ShippingAppData, ShippingCosts, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
 import { WixPageId } from '@/app/utils/navigation.const';
 import { useShippingAppData } from '@/app/client-hooks/app-data';
-import { updateStoreItemPrice } from '@/app/actions/store';
+import { getStoreItemsPrices, updateStoreItemPrice } from '@/app/actions/store';
 import { getAppInstance } from '@/app/actions/app-data';
 import testIds from '@/app/utils/test-ids';
 import { UpdatePriceForm } from './UpdatePriceForm';
+import { StoreProductsMetalTypeAndWeight } from './StoreProductsMetalTypeAndWight';
 import { createClient } from '@/app/utils/supabase/client';
 import { AuthSignIn } from './AuthSignIn';
 import { useSupabaseAuth } from '@/app/client-hooks/useSupabaseAuth';
@@ -27,6 +28,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [silverPrice, setSilverPrice] = useState<number | null>(null);
   const [platinumPrice, setPlatinumPrice] = useState<number | null>(null);
+  const [productsToSet, setProductsToSet] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(false);
   const { isSignedIn, loading: authLoading, signOut } = useSupabaseAuth();
@@ -54,6 +56,12 @@ export const ShippingRatesPageContent = ({}: {}) => {
       if (rules?.goldPrice) setGoldPrice(rules.goldPrice);
       if (rules?.silverPrice) setSilverPrice(rules.silverPrice);
       if (rules?.platinumPrice) setPlatinumPrice(rules.platinumPrice);
+
+      const products = await getStoreItemsPrices({ accessToken });
+      console.log('Fetched store products for dashboard:', products);
+      if (products) {
+        setProductsToSet(products);
+      }
     } catch (e) {
       console.error('Error loading dashboard data', e);
     }
@@ -247,6 +255,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
                       setUpdatedPlatinumPriceForMethod(newPrice);
                     }}
                   />
+                </Cell>
+                <Cell key={4}>
+                  <StoreProductsMetalTypeAndWeight title='Current Products' productsToSet={productsToSet} />
                 </Cell>
               </Layout>
             )}
