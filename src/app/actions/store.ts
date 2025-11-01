@@ -82,10 +82,13 @@ export async function updateStoreItemPrice({
       console.log('Fetched V3 product IDs:', productIds.length);
 
       // Fetch full product details using getProduct() to get variantsInfo AND options
+      // Request VARIANT_OPTION_CHOICE_NAMES to get complete choice structure
       const fullProducts = await Promise.all(
         productIds.map(async (productId) => {
           try {
-            const productData = await sdk.productsV3.getProduct(productId);
+            const productData = await sdk.productsV3.getProduct(productId, {
+              fields: ['VARIANT_OPTION_CHOICE_NAMES'],
+            });
             return productData;
           } catch (error) {
             console.error(`Failed to fetch product ${productId}:`, error);
@@ -109,31 +112,55 @@ export async function updateStoreItemPrice({
           const newPrice = currentPrice + totalPriceIncrement;
 
           return {
-            ...variant,
-            choices: variant.choices?.map((choice) => {
-              return { ...choice, optionId: choice.optionChoiceIds?.optionId };
-            }),
             _id: variant._id,
+            // Preserve the complete choices structure with both IDs and names
+            choices: variant.choices?.map((choice) => ({
+              optionChoiceIds: {
+                optionId: choice.optionChoiceIds?.optionId,
+                choiceId: choice.optionChoiceIds?.choiceId,
+              },
+              optionChoiceNames: {
+                optionName: choice.optionChoiceNames?.optionName,
+                choiceName: choice.optionChoiceNames?.choiceName,
+                renderType: choice.optionChoiceNames?.renderType,
+              },
+            })),
             price: {
-              ...variant?.price,
               actualPrice: {
-                ...variant?.price?.actualPrice,
                 amount: newPrice.toFixed(2).toString(), // Must be string format
               },
             },
+            // Preserve other variant properties
+            ...(variant.sku && { sku: variant.sku }),
+            ...(variant.barcode && { barcode: variant.barcode }),
+            ...(variant.visible !== undefined && { visible: variant.visible }),
           };
         });
 
-        // CRITICAL FIX: Include the options array
+        // CRITICAL: Include the complete options array
         // Every variant's choices.optionId must exist in options.id
+        // Options must include _id, name, and choicesSettings with all choices
         return {
           product: {
             _id: product?._id,
             revision: product?.revision,
-            // Include options - this is required for variant choices validation
-            options: product?.options || [],
+            // Include complete options structure - required for variant choices validation
+            options:
+              product?.options?.map((option) => ({
+                _id: option._id,
+                name: option.name,
+                optionRenderType: option.optionRenderType,
+                choicesSettings: {
+                  choices: option.choicesSettings?.choices?.map((choice) => ({
+                    choiceId: choice.choiceId,
+                    name: choice.name,
+                    choiceType: choice.choiceType,
+                    ...(choice.colorCode && { colorCode: choice.colorCode }),
+                    ...(choice.linkedMedia && { linkedMedia: choice.linkedMedia }),
+                  })),
+                },
+              })) || [],
             variantsInfo: {
-              ...product?.variantsInfo,
               variants: updatedVariants,
             },
           },
