@@ -10,6 +10,7 @@ import {
   Layout,
   Text,
   TextButton,
+  Input,
 } from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
 import testIds from '@/app/utils/test-ids';
@@ -27,10 +28,18 @@ export function StoreProductsMetalTypeAndWeight({ title, productsToSet }: { titl
                 <Text>{product.name}</Text>
                 <Layout>
                   <Cell span={8}>
+                    <FormField label={`Product Metal Type`}>
+                      <Input
+                        value={product.extendedFields.namespaces['@wixfreaks/test-shipping-example'].MetalType}
+                        // onChange={(e) => product.setMetalType(e.target.value)}
+                      />
+                    </FormField>
+                  </Cell>
+                  {/* <Cell span={8}>
                     <FormField label={`Enter Price`}>
                       <NumberInput value={product.price} onChange={(value) => product.setPrice(value)} />
                     </FormField>
-                  </Cell>
+                  </Cell> */}
                 </Layout>
               </Box>
             ))
