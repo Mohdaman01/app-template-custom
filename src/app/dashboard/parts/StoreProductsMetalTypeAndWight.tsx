@@ -106,7 +106,7 @@ export function StoreProductsMetalTypeAndWeight({
                       <FormField label={`Product Metal Type`}>
                         <Dropdown
                           options={metalTypeOptions}
-                          selectedId={currentUpdate?.metalType || 'GOLD'}
+                          selectedId={currentUpdate?.metalType || ''}
                           onSelect={(option) => handleMetalTypeChange(product._id, option.id as string)}
                           placeholder='Select Metal Type'
                         />
