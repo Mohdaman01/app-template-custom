@@ -87,6 +87,17 @@ export async function POST(request: NextRequest) {
       const tempProdcut = await appClient.ProdcutsV3.getProduct(product._id);
       const revision = tempProdcut.revision;
 
+      // Check if extended fields already exist
+      const existingMetalType =
+        tempProdcut?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType;
+      const existingMetalWeight =
+        tempProdcut?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight;
+
+      if (existingMetalType !== undefined && existingMetalWeight !== undefined) {
+        console.log(`Product ${product._id} already has extended fields, skipping update`);
+        continue;
+      }
+
       const response = await appClient.ProdcutsV3.updateProduct(product._id, {
         revision: revision,
         extendedFields: {
