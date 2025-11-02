@@ -3,14 +3,12 @@ import {
   Box,
   Card,
   Cell,
-  Collapse,
-  Dropdown,
   FormField,
   NumberInput,
-  Layout,
+  //   Layout,
   Text,
-  TextButton,
-  Input,
+  //   TextButton,
+  Dropdown,
 } from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
 import testIds from '@/app/utils/test-ids';
@@ -35,6 +33,13 @@ export function StoreProductsMetalTypeAndWeight({
 }: StoreProductsMetalTypeAndWeightProps) {
   // Track local state for each product's metal type and weight
   const [productUpdates, setProductUpdates] = useState<Record<string, ProductUpdate>>({});
+
+  // Metal type options for dropdown
+  const metalTypeOptions = [
+    { id: 'GOLD', value: 'Gold' },
+    { id: 'SILVER', value: 'Silver' },
+    { id: 'PLATINUM', value: 'Platinum' },
+  ];
 
   // Use actual products if available, otherwise fall back to test products in development only
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -99,9 +104,11 @@ export function StoreProductsMetalTypeAndWeight({
                   <Box direction='horizontal' gap='SP6'>
                     <Cell span={8}>
                       <FormField label={`Product Metal Type`}>
-                        <Input
-                          value={currentUpdate?.metalType || ''}
-                          onChange={(e) => handleMetalTypeChange(product._id, e.target.value)}
+                        <Dropdown
+                          options={metalTypeOptions}
+                          selectedId={currentUpdate?.metalType || 'GOLD'}
+                          onSelect={(option) => handleMetalTypeChange(product._id, option.id as string)}
+                          placeholder='Select Metal Type'
                         />
                       </FormField>
                     </Cell>

@@ -37,12 +37,27 @@ export async function updateStoreItemPrice({
   silverPrice: number;
   platinumPrice: number;
 }) {
-  console.log('Updating store item prices with increment:', { goldPrice, silverPrice, platinumPrice });
+  console.log('Updating store item prices based on metal type and weight:', { goldPrice, silverPrice, platinumPrice });
+
+  // Helper function to calculate price based on metal type and weight
+  const calculatePrice = (metalType: string, metalWeight: number): number => {
+    const normalizedMetalType = metalType?.toUpperCase();
+
+    if (normalizedMetalType === 'GOLD') {
+      return goldPrice * metalWeight;
+    } else if (normalizedMetalType === 'SILVER') {
+      return silverPrice * metalWeight;
+    } else if (normalizedMetalType === 'PLATINUM') {
+      return platinumPrice * metalWeight;
+    }
+
+    // Default to 0 if metal type is not recognized
+    return 0;
+  };
 
   try {
     const sdk = createSdk(accessToken);
     const version = await sdk.catalogVersioning.getCatalogVersion();
-    const totalPriceIncrement = goldPrice + silverPrice + platinumPrice;
 
     if (version.catalogVersion === 'V1_CATALOG') {
       // V1 Catalog: Update priceData at product level
@@ -53,24 +68,49 @@ export async function updateStoreItemPrice({
 
       console.log('Fetched V1 store products:', storeProducts);
 
-      const updatedProducts = storeProducts.map((product) => ({
-        ...product,
-        priceData: {
-          ...product.priceData,
-          price: (product.priceData?.price ?? 0) + totalPriceIncrement,
-        },
-        lastUpdated: new Date(),
-      }));
+      // Filter and map products that have valid MetalType
+      const productsToUpdate = storeProducts
+        .map((product) => {
+          // Type assertion to access extendedFields (V1 catalog may have extended fields as any)
+          const productWithExtendedFields = product as any;
+          const metalType =
+            productWithExtendedFields.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
+          const metalWeight =
+            productWithExtendedFields.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight ||
+            0;
+
+          // Skip products without a valid metal type
+          const normalizedMetalType = metalType?.toUpperCase();
+          if (!normalizedMetalType || !['GOLD', 'SILVER', 'PLATINUM'].includes(normalizedMetalType)) {
+            return null;
+          }
+
+          const newPrice = calculatePrice(metalType, metalWeight);
+
+          return {
+            ...product,
+            priceData: {
+              ...product.priceData,
+              price: newPrice,
+            },
+            lastUpdated: new Date(),
+          };
+        })
+        .filter((product): product is NonNullable<typeof product> => product !== null);
+
+      console.log(
+        `Updating ${productsToUpdate.length} out of ${storeProducts.length} V1 products with valid MetalType`,
+      );
 
       await Promise.all(
-        updatedProducts.map((product) =>
+        productsToUpdate.map((product) =>
           sdk.products.updateProduct(product._id!, {
             priceData: product.priceData,
           }),
         ),
       );
 
-      return updatedProducts;
+      return productsToUpdate;
     } else if (version.catalogVersion === 'V3_CATALOG') {
       // V3 Catalog: Update price at variant level using bulkUpdateProductsWithInventory
       // CRITICAL: Must include options array - variants choices must reference existing options
@@ -102,72 +142,92 @@ export async function updateStoreItemPrice({
       console.log('Fetched full V3 products:', validProducts);
 
       // Prepare products for bulk update with correct structure
-      const productsToUpdate = validProducts.map((product) => {
-        // Get all variants for this product
-        const variants = product?.variantsInfo?.variants || [];
+      const productsToUpdate = validProducts
+        .map((product) => {
+          // Get metal type and weight from extended fields
+          const metalType = product?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
+          const metalWeight =
+            product?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight || 0;
 
-        // Update each variant's price with correct structure
-        const updatedVariants = variants.map((variant) => {
-          const currentPrice = parseFloat(variant.price?.actualPrice?.amount || '0');
-          const newPrice = currentPrice + totalPriceIncrement;
+          // Skip products without a valid metal type
+          const normalizedMetalType = (metalType as string)?.toUpperCase();
+          if (!normalizedMetalType || !['GOLD', 'SILVER', 'PLATINUM'].includes(normalizedMetalType)) {
+            return null;
+          }
 
-          return {
-            _id: variant._id,
-            // Preserve the complete choices structure with both IDs and names
-            choices: variant.choices?.map((choice) => ({
-              optionChoiceIds: {
-                optionId: choice.optionChoiceIds?.optionId,
-                choiceId: choice.optionChoiceIds?.choiceId,
-              },
-              optionChoiceNames: {
-                optionName: choice.optionChoiceNames?.optionName,
-                choiceName: choice.optionChoiceNames?.choiceName,
-                renderType: choice.optionChoiceNames?.renderType,
-              },
-            })),
-            price: {
-              actualPrice: {
-                amount: newPrice.toFixed(2).toString(), // Must be string format
-              },
-            },
-            // Preserve other variant properties
-            ...(variant.sku && { sku: variant.sku }),
-            ...(variant.barcode && { barcode: variant.barcode }),
-            ...(variant.visible !== undefined && { visible: variant.visible }),
-          };
-        });
+          const newPrice = calculatePrice(metalType as string, metalWeight as number);
 
-        // CRITICAL: Include the complete options array
-        // Every variant's choices.optionId must exist in options.id
-        // Options must include _id, name, and choicesSettings with all choices
-        return {
-          product: {
-            _id: product?._id,
-            revision: product?.revision,
-            // Include complete options structure - required for variant choices validation
-            options:
-              product?.options?.map((option) => ({
-                _id: option._id,
-                name: option.name,
-                optionRenderType: option.optionRenderType,
-                choicesSettings: {
-                  choices: option.choicesSettings?.choices?.map((choice) => ({
-                    choiceId: choice.choiceId,
-                    name: choice.name,
-                    choiceType: choice.choiceType,
-                    ...(choice.colorCode && { colorCode: choice.colorCode }),
-                    ...(choice.linkedMedia && { linkedMedia: choice.linkedMedia }),
-                  })),
+          // Get all variants for this product
+          const variants = product?.variantsInfo?.variants || [];
+
+          // Update each variant's price with calculated price based on metal type and weight
+          const updatedVariants = variants.map((variant) => {
+            return {
+              _id: variant._id,
+              // Preserve the complete choices structure with both IDs and names
+              choices: variant.choices?.map((choice) => ({
+                optionChoiceIds: {
+                  optionId: choice.optionChoiceIds?.optionId,
+                  choiceId: choice.optionChoiceIds?.choiceId,
                 },
-              })) || [],
-            variantsInfo: {
-              variants: updatedVariants,
-            },
-          },
-        };
-      });
+                optionChoiceNames: {
+                  optionName: choice.optionChoiceNames?.optionName,
+                  choiceName: choice.optionChoiceNames?.choiceName,
+                  renderType: choice.optionChoiceNames?.renderType,
+                },
+              })),
+              price: {
+                actualPrice: {
+                  amount: newPrice.toFixed(2).toString(), // Must be string format
+                },
+              },
+              // Preserve other variant properties
+              ...(variant.sku && { sku: variant.sku }),
+              ...(variant.barcode && { barcode: variant.barcode }),
+              ...(variant.visible !== undefined && { visible: variant.visible }),
+            };
+          });
 
-      console.log('Prepared products for bulk update:', productsToUpdate);
+          // CRITICAL: Include the complete options array
+          // Every variant's choices.optionId must exist in options.id
+          // Options must include _id, name, and choicesSettings with all choices
+          return {
+            product: {
+              _id: product?._id,
+              revision: product?.revision,
+              // Include complete options structure - required for variant choices validation
+              options:
+                product?.options?.map((option) => ({
+                  _id: option._id,
+                  name: option.name,
+                  optionRenderType: option.optionRenderType,
+                  choicesSettings: {
+                    choices: option.choicesSettings?.choices?.map((choice) => ({
+                      choiceId: choice.choiceId,
+                      name: choice.name,
+                      choiceType: choice.choiceType,
+                      ...(choice.colorCode && { colorCode: choice.colorCode }),
+                      ...(choice.linkedMedia && { linkedMedia: choice.linkedMedia }),
+                    })),
+                  },
+                })) || [],
+              variantsInfo: {
+                variants: updatedVariants,
+              },
+            },
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+
+      console.log(
+        `Prepared ${productsToUpdate.length} out of ${validProducts.length} V3 products for bulk update with valid MetalType`,
+      );
+
+      // If no products to update, return empty array
+      if (productsToUpdate.length === 0) {
+        console.log('No V3 products with valid MetalType to update');
+        return [];
+      }
 
       // Use bulkUpdateProductsWithInventory to update all products
       // Process in batches of 100 (API limit)
