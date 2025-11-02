@@ -7,9 +7,6 @@
 .yarn/install-state.gz
 .vscode
 
-// dummy data file
-dummy.js
-
 # testing
 /coverage
 
