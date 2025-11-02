@@ -24,7 +24,7 @@ export function StoreProductsMetalTypeAndWeight({ title, productsToSet }: { titl
         <Box direction='vertical' gap='SP7'>
           {productsToSet && productsToSet.length > 0 ? (
             productsToSet.map((product, index) => (
-              <Box key={index} direction='vertical' gap='SP4'>
+              <Box key={index} direction='horizontal' gap='SP4'>
                 <Text>{product.name}</Text>
                 <Layout>
                   <Cell span={8}>
@@ -35,11 +35,13 @@ export function StoreProductsMetalTypeAndWeight({ title, productsToSet }: { titl
                       />
                     </FormField>
                   </Cell>
-                  {/* <Cell span={8}>
-                    <FormField label={`Enter Price`}>
-                      <NumberInput value={product.price} onChange={(value) => product.setPrice(value)} />
+                  <Cell span={8}>
+                    <FormField label={`Product Weight`}>
+                      <NumberInput
+                        value={product.extendedFields.namespaces['@wixfreaks/test-shipping-example']?.MetalWeight || 0}
+                      />
                     </FormField>
-                  </Cell> */}
+                  </Cell>
                 </Layout>
               </Box>
             ))
