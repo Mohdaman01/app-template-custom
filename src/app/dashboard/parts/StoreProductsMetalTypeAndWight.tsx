@@ -1,4 +1,4 @@
-// import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -14,37 +14,110 @@ import {
 } from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
 import testIds from '@/app/utils/test-ids';
+import { testProducts } from '../../../..//dummy';
 
-export function StoreProductsMetalTypeAndWeight({ title, productsToSet }: { title: string; productsToSet: any[] }) {
+interface ProductUpdate {
+  productId: string;
+  metalType: string;
+  metalWeight: number;
+}
+
+interface StoreProductsMetalTypeAndWeightProps {
+  title: string;
+  productsToSet: any[];
+  onProductUpdatesChanged?: (updates: ProductUpdate[]) => void;
+}
+
+export function StoreProductsMetalTypeAndWeight({
+  title,
+  productsToSet,
+  onProductUpdatesChanged,
+}: StoreProductsMetalTypeAndWeightProps) {
+  // Track local state for each product's metal type and weight
+  const [productUpdates, setProductUpdates] = useState<Record<string, ProductUpdate>>({});
+
+  // Use actual products if available, otherwise fall back to test products in development only
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const displayProducts = productsToSet.length > 0 ? productsToSet : isDevelopment ? testProducts : [];
+
+  // Initialize state from products
+  useEffect(() => {
+    const initialUpdates: Record<string, ProductUpdate> = {};
+    displayProducts.forEach((product) => {
+      const metalType = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
+      const metalWeight = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight || 0;
+
+      initialUpdates[product._id] = {
+        productId: product._id,
+        metalType,
+        metalWeight,
+      };
+    });
+    setProductUpdates(initialUpdates);
+  }, [displayProducts]);
+
+  // Notify parent whenever updates change
+  useEffect(() => {
+    if (onProductUpdatesChanged) {
+      const updatesArray = Object.values(productUpdates);
+      onProductUpdatesChanged(updatesArray);
+    }
+  }, [productUpdates, onProductUpdatesChanged]);
+
+  const handleMetalTypeChange = (productId: string, metalType: string) => {
+    setProductUpdates((prev) => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        metalType,
+      },
+    }));
+  };
+
+  const handleMetalWeightChange = (productId: string, metalWeight: number) => {
+    setProductUpdates((prev) => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        metalWeight,
+      },
+    }));
+  };
+
   return (
     <Card dataHook={testIds.DASHBOARD.SHIPPING_METHOD}>
       <Card.Header title={title} />
       <Card.Divider />
       <Card.Content dataHook={testIds.DASHBOARD.SHIPPING_METHOD_FORM}>
         <Box direction='vertical' gap='SP7'>
-          {productsToSet && productsToSet.length > 0 ? (
-            productsToSet.map((product, index) => (
-              <Box key={index} direction='horizontal' gap='SP4'>
-                <Text>{product.name}</Text>
-                <Layout>
-                  <Cell span={8}>
-                    <FormField label={`Product Metal Type`}>
-                      <Input
-                        value={product.extendedFields.namespaces['@wixfreaks/test-shipping-example'].MetalType}
-                        // onChange={(e) => product.setMetalType(e.target.value)}
-                      />
-                    </FormField>
-                  </Cell>
-                  <Cell span={8}>
-                    <FormField label={`Product Weight`}>
-                      <NumberInput
-                        value={product.extendedFields.namespaces['@wixfreaks/test-shipping-example']?.MetalWeight || 0}
-                      />
-                    </FormField>
-                  </Cell>
-                </Layout>
-              </Box>
-            ))
+          {displayProducts && displayProducts.length > 0 ? (
+            displayProducts.map((product, index) => {
+              const currentUpdate = productUpdates[product._id];
+              return (
+                <Box key={product._id || index} direction='vertical' gap='SP4'>
+                  <Text>{product.name}</Text>
+                  <Box direction='horizontal' gap='SP6'>
+                    <Cell span={8}>
+                      <FormField label={`Product Metal Type`}>
+                        <Input
+                          value={currentUpdate?.metalType || ''}
+                          onChange={(e) => handleMetalTypeChange(product._id, e.target.value)}
+                        />
+                      </FormField>
+                    </Cell>
+                    <Cell span={8}>
+                      <FormField label={`Product Weight (grams)`}>
+                        <NumberInput
+                          value={currentUpdate?.metalWeight || 0}
+                          suffix='g'
+                          onChange={(value) => handleMetalWeightChange(product._id, value || 0)}
+                        />
+                      </FormField>
+                    </Cell>
+                  </Box>
+                </Box>
+              );
+            })
           ) : (
             <Text>No products to set prices for</Text>
           )}

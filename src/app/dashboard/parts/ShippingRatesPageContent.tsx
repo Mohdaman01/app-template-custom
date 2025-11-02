@@ -6,7 +6,7 @@ import { useAccessToken } from '@/app/client-hooks/access-token';
 import { ShippingAppData, ShippingCosts, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
 import { WixPageId } from '@/app/utils/navigation.const';
 import { useShippingAppData } from '@/app/client-hooks/app-data';
-import { getStoreItemsPrices, updateStoreItemPrice } from '@/app/actions/store';
+import { getStoreItemsPrices, updateStoreItemPrice, bulkUpdateProductExtendedFields } from '@/app/actions/store';
 import { getAppInstance } from '@/app/actions/app-data';
 import testIds from '@/app/utils/test-ids';
 import { UpdatePriceForm } from './UpdatePriceForm';
@@ -29,6 +29,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const [silverPrice, setSilverPrice] = useState<number | null>(null);
   const [platinumPrice, setPlatinumPrice] = useState<number | null>(null);
   const [productsToSet, setProductsToSet] = useState<any[]>([]);
+  const [productUpdates, setProductUpdates] = useState<
+    Array<{ productId: string; metalType: string; metalWeight: number }>
+  >([]);
 
   const [loading, setLoading] = useState(false);
   const { isSignedIn, loading: authLoading, signOut } = useSupabaseAuth();
@@ -92,13 +95,23 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
         if (error) throw error;
 
+        // Bulk update product extended fields
+        if (productUpdates.length > 0) {
+          await bulkUpdateProductExtendedFields({
+            accessToken,
+            updates: productUpdates,
+          });
+        }
+
+        // Update store item prices
         await updateStoreItemPrice({
           accessToken,
           goldPrice: goldPrice!,
           silverPrice: silverPrice!,
           platinumPrice: platinumPrice!,
         });
-        showToast({ message: 'Prices updated successfully.', type: 'success' });
+
+        showToast({ message: 'Prices and product details updated successfully.', type: 'success' });
       } catch (e) {
         console.error('Error updating prices:', e);
         showToast({ message: 'Failed to update Prices.', type: 'error' });
@@ -106,7 +119,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         setLoading(false);
       }
     })();
-  }, [accessTokenPromise, goldPrice, silverPrice, platinumPrice, showToast]);
+  }, [accessTokenPromise, goldPrice, silverPrice, platinumPrice, productUpdates, showToast]);
 
   // auth is handled by useSupabaseAuth hook which subscribes to auth state and visibility
 
@@ -140,6 +153,13 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const setUpdatedGoldPriceForMethod = useCallback((newPrice: number) => setGoldPrice(newPrice), []);
   const setUpdatedSilverPriceForMethod = useCallback((newPrice: number) => setSilverPrice(newPrice), []);
   const setUpdatedPlatinumPriceForMethod = useCallback((newPrice: number) => setPlatinumPrice(newPrice), []);
+
+  const handleProductUpdatesChanged = useCallback(
+    (updates: Array<{ productId: string; metalType: string; metalWeight: number }>) => {
+      setProductUpdates(updates);
+    },
+    [],
+  );
 
   const ButtonsBar = useCallback(
     () => (
@@ -257,7 +277,11 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   />
                 </Cell>
                 <Cell key={4}>
-                  <StoreProductsMetalTypeAndWeight title='Current Products' productsToSet={productsToSet} />
+                  <StoreProductsMetalTypeAndWeight
+                    title='Current Products'
+                    productsToSet={productsToSet}
+                    onProductUpdatesChanged={handleProductUpdatesChanged}
+                  />
                 </Cell>
               </Layout>
             )}

@@ -93,7 +93,8 @@ export async function POST(request: NextRequest) {
           namespaces: {
             // Replace with your app's namespace from the schema plugin
             '@wixfreaks/test-shipping-example': {
-              MetalType: 'Gold',
+              MetalType: '',
+              MetalWeight: 0,
             },
           },
         },

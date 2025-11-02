@@ -195,3 +195,132 @@ export async function updateStoreItemPrice({
     throw e;
   }
 }
+
+export async function updateProductExtendedFields({
+  accessToken,
+  productId,
+  metalType,
+  metalWeight,
+}: {
+  accessToken: string;
+  productId: string;
+  metalType: string;
+  metalWeight: number;
+}) {
+  console.log('Updating product extended fields:', { productId, metalType, metalWeight });
+
+  try {
+    const sdk = createSdk(accessToken);
+    const version = await sdk.catalogVersioning.getCatalogVersion();
+
+    if (version.catalogVersion !== 'V3_CATALOG') {
+      throw new Error('Extended fields are only supported in V3_CATALOG');
+    }
+
+    // Fetch the product to get current revision
+    const product = await sdk.productsV3.getProduct(productId);
+
+    if (!product) {
+      throw new Error(`Product ${productId} not found`);
+    }
+
+    // Update product with extended fields
+    const updatedProduct = await sdk.productsV3.updateProduct(productId, {
+      revision: product.revision,
+      extendedFields: {
+        namespaces: {
+          '@wixfreaks/test-shipping-example': {
+            MetalType: metalType,
+            MetalWeight: metalWeight,
+          },
+        },
+      },
+    });
+
+    console.log('Successfully updated product extended fields:', updatedProduct);
+    return updatedProduct;
+  } catch (e) {
+    console.error('Failed to update product extended fields:', e);
+    throw e;
+  }
+}
+
+export async function bulkUpdateProductExtendedFields({
+  accessToken,
+  updates,
+}: {
+  accessToken: string;
+  updates: Array<{
+    productId: string;
+    metalType: string;
+    metalWeight: number;
+  }>;
+}) {
+  console.log('Bulk updating product extended fields for', updates.length, 'products');
+
+  try {
+    const sdk = createSdk(accessToken);
+    const version = await sdk.catalogVersioning.getCatalogVersion();
+
+    if (version.catalogVersion !== 'V3_CATALOG') {
+      throw new Error('Extended fields are only supported in V3_CATALOG');
+    }
+
+    // Fetch all products to get their revisions
+    const productIds = updates.map((u) => u.productId);
+    const products = await Promise.all(
+      productIds.map(async (productId) => {
+        try {
+          return await sdk.productsV3.getProduct(productId);
+        } catch (error) {
+          console.error(`Failed to fetch product ${productId}:`, error);
+          return null;
+        }
+      }),
+    );
+
+    // Filter out null results and prepare bulk update payload
+    const validProducts = products.filter(Boolean);
+    const productsToUpdate = validProducts
+      .map((product, index) => {
+        const update = updates.find((u) => u.productId === product?._id);
+        if (!update || !product?._id || !product?.revision) return null;
+
+        return {
+          product: {
+            _id: product._id,
+            revision: product.revision,
+            extendedFields: {
+              namespaces: {
+                '@wixfreaks/test-shipping-example': {
+                  MetalType: update.metalType,
+                  MetalWeight: update.metalWeight,
+                },
+              },
+            },
+          },
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    console.log('Prepared products for bulk extended fields update:', productsToUpdate);
+
+    // Use bulkUpdateProductsWithInventory in batches of 100
+    const batchSize = 100;
+    const results = [];
+
+    for (let i = 0; i < productsToUpdate.length; i += batchSize) {
+      const batch = productsToUpdate.slice(i, i + batchSize);
+      const batchResult = await sdk.productsV3.bulkUpdateProductsWithInventory(batch, {});
+      results.push(...(batchResult?.productResults?.results || []));
+    }
+
+    const updatedProducts = results.filter((result) => result.item).map((result) => result.item);
+
+    console.log('Successfully bulk updated extended fields for', updatedProducts.length, 'products');
+    return updatedProducts;
+  } catch (e) {
+    console.error('Failed to bulk update product extended fields:', e);
+    throw e;
+  }
+}
