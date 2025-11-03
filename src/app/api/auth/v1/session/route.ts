@@ -25,22 +25,45 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Session API] Received token, attempting to decode...');
+    console.log('[Session API] Token preview:', wixAccessToken.substring(0, 50) + '...');
 
-    // Verify and decode the Wix JWT
-    let wixPayload: WixPayload | null;
-    try {
-      wixPayload = decodeJwt<WixPayload>(wixAccessToken);
-    } catch (decodeError) {
-      console.error('[Session API] Failed to decode JWT:', decodeError);
-      return NextResponse.json({ error: 'Invalid token format' }, { status: 401 });
+    // Check if this is a development bypass token
+    const isDevelopmentBypass = wixAccessToken === 'dev-bypass-token';
+
+    let instanceId: string;
+
+    if (isDevelopmentBypass) {
+      console.log('[Session API] Using development bypass token');
+      instanceId = 'dev-instance-local';
+    } else {
+      // Verify and decode the Wix JWT
+      let wixPayload: WixPayload | null;
+      try {
+        wixPayload = decodeJwt<WixPayload>(wixAccessToken);
+        if (!wixPayload) {
+          console.error('[Session API] decodeJwt returned null');
+          return NextResponse.json({ error: 'Invalid token format - could not decode' }, { status: 401 });
+        }
+      } catch (decodeError) {
+        console.error('[Session API] Failed to decode JWT:', decodeError);
+        return NextResponse.json(
+          {
+            error: 'Invalid token format',
+            details: decodeError instanceof Error ? decodeError.message : String(decodeError),
+          },
+          { status: 401 },
+        );
+      }
+
+      if (!wixPayload.instanceId) {
+        console.error('[Session API] No instanceId in decoded token. Payload:', JSON.stringify(wixPayload));
+        return NextResponse.json({ error: 'Invalid token - missing instanceId' }, { status: 401 });
+      }
+
+      instanceId = wixPayload.instanceId;
     }
 
-    if (!wixPayload?.instanceId) {
-      console.error('[Session API] No instanceId in decoded token:', wixPayload);
-      return NextResponse.json({ error: 'Invalid token - missing instanceId' }, { status: 401 });
-    }
-
-    console.log('[Session API] Token decoded successfully, instanceId:', wixPayload.instanceId);
+    console.log('[Session API] Token decoded successfully, instanceId:', instanceId);
 
     // Create a response to set cookies properly
     let cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }> = [];
@@ -58,8 +81,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Generate a unique email/password for this Wix instance
-    const email = `wix-instance-${wixPayload.instanceId}@app.local`;
-    const password = `wix-${wixPayload.instanceId}-${wixAppJwtKey.substring(0, 8)}`;
+    const email = `wix-instance-${instanceId}@app.local`;
+    const password = `wix-${instanceId}-${wixAppJwtKey.substring(0, 8)}`;
 
     console.log('[Session API] Attempting to sign in with instance credentials...');
 
@@ -77,9 +100,9 @@ export async function POST(request: NextRequest) {
         password,
         options: {
           data: {
-            wix_instance_id: wixPayload.instanceId,
-            wix_user_id: wixPayload.userId,
-            wix_vendor_id: wixPayload.vendorId,
+            wix_instance_id: instanceId,
+            wix_user_id: isDevelopmentBypass ? 'dev-user' : undefined,
+            wix_vendor_id: isDevelopmentBypass ? 'dev-vendor' : undefined,
           },
         },
       });

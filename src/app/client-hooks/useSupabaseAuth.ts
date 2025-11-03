@@ -84,15 +84,28 @@ export const useSupabaseAuth = () => {
 
         // No existing session, get Wix token and exchange it
         console.log('[useSupabaseAuth] No existing session, getting Wix token...');
-        const wixToken = await accessTokenPromise;
+        let wixToken = await accessTokenPromise;
 
+        // If no token in production, user needs to sign in manually
+        // In development, use a bypass token
         if (!wixToken) {
-          console.log('[useSupabaseAuth] No Wix token available');
-          if (!mounted) return;
-          setUser(null);
-          setIsSignedIn(false);
-          setLoading(false);
-          return;
+          const isDev = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
+          if (isDev) {
+            console.log('[useSupabaseAuth] No Wix token - using development bypass token');
+            wixToken = 'dev-bypass-token';
+          } else {
+            console.log('[useSupabaseAuth] No Wix token available - user needs to sign in manually');
+            if (!mounted) return;
+            setUser(null);
+            setIsSignedIn(false);
+            setLoading(false);
+            return;
+          }
+        }
+
+        console.log('[useSupabaseAuth] Got Wix token (length:', wixToken.length, ')');
+        if (wixToken !== 'dev-bypass-token') {
+          console.log('[useSupabaseAuth] Token starts with:', wixToken.substring(0, 20) + '...');
         }
 
         // Store the token for later use
@@ -109,7 +122,7 @@ export const useSupabaseAuth = () => {
           setIsSignedIn(Boolean(newData?.user));
           console.log('[useSupabaseAuth] Session established successfully');
         } else {
-          console.log('[useSupabaseAuth] Failed to exchange token');
+          console.log('[useSupabaseAuth] Failed to exchange token - user needs to sign in manually');
           if (!mounted) return;
           setUser(null);
           setIsSignedIn(false);
