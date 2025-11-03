@@ -20,14 +20,27 @@ export async function POST(request: NextRequest) {
     // Get the Wix access token from the request
     const wixAccessToken = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!wixAccessToken) {
+      console.error('[Session API] No access token in request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('[Session API] Received token, attempting to decode...');
+
     // Verify and decode the Wix JWT
-    const wixPayload = decodeJwt<WixPayload>(wixAccessToken);
-    if (!wixPayload?.instanceId) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    let wixPayload: WixPayload | null;
+    try {
+      wixPayload = decodeJwt<WixPayload>(wixAccessToken);
+    } catch (decodeError) {
+      console.error('[Session API] Failed to decode JWT:', decodeError);
+      return NextResponse.json({ error: 'Invalid token format' }, { status: 401 });
     }
+
+    if (!wixPayload?.instanceId) {
+      console.error('[Session API] No instanceId in decoded token:', wixPayload);
+      return NextResponse.json({ error: 'Invalid token - missing instanceId' }, { status: 401 });
+    }
+
+    console.log('[Session API] Token decoded successfully, instanceId:', wixPayload.instanceId);
 
     // Create a response to set cookies properly
     let cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }> = [];
@@ -48,6 +61,8 @@ export async function POST(request: NextRequest) {
     const email = `wix-instance-${wixPayload.instanceId}@app.local`;
     const password = `wix-${wixPayload.instanceId}-${wixAppJwtKey.substring(0, 8)}`;
 
+    console.log('[Session API] Attempting to sign in with instance credentials...');
+
     // Try to sign in with the generated credentials
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
@@ -55,6 +70,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (signInError?.message?.includes('Invalid login credentials')) {
+      console.log('[Session API] User not found, creating new account...');
       // If sign in fails, create the account
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -69,9 +85,11 @@ export async function POST(request: NextRequest) {
       });
 
       if (signUpError) {
-        console.error('Error creating instance account:', signUpError);
-        return NextResponse.json({ error: 'Error creating session' }, { status: 500 });
+        console.error('[Session API] Error creating instance account:', signUpError);
+        return NextResponse.json({ error: 'Error creating session', details: signUpError.message }, { status: 500 });
       }
+
+      console.log('[Session API] Account created successfully');
 
       // Create response with session and set cookies
       const response = NextResponse.json({
@@ -86,9 +104,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (signInError) {
-      console.error('Error signing in:', signInError);
-      return NextResponse.json({ error: 'Error creating session' }, { status: 500 });
+      console.error('[Session API] Error signing in:', signInError);
+      return NextResponse.json({ error: 'Error creating session', details: signInError.message }, { status: 500 });
     }
+
+    console.log('[Session API] Sign in successful');
 
     // Create response with session and set cookies
     const response = NextResponse.json({
@@ -101,7 +121,10 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Session exchange error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[Session API] Unexpected error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : String(error) 
+    }, { status: 500 });
   }
 }

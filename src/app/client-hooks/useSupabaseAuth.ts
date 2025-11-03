@@ -29,13 +29,21 @@ export const useSupabaseAuth = () => {
         });
 
         if (!response.ok) {
-          console.error('[useSupabaseAuth] Session exchange failed:', response.statusText);
+          const errorText = await response.text();
+          console.error('[useSupabaseAuth] Session exchange failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText,
+          });
           return false;
         }
 
-        const { session } = await response.json();
+        const responseData = await response.json();
+        console.log('[useSupabaseAuth] Session API response:', responseData);
+
+        const { session } = responseData;
         if (!session?.access_token) {
-          console.error('[useSupabaseAuth] No session in response');
+          console.error('[useSupabaseAuth] No session in response:', responseData);
           return false;
         }
 
