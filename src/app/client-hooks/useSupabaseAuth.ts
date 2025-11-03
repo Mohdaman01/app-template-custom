@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
 import { useAccessToken } from './access-token';
 
@@ -8,6 +8,9 @@ export const useSupabaseAuth = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [user, setUser] = useState<any | null>(null);
   const accessTokenPromise = useAccessToken();
+
+  // Store the resolved Wix token so we can reuse it
+  const wixTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -84,6 +87,9 @@ export const useSupabaseAuth = () => {
           return;
         }
 
+        // Store the token for later use
+        wixTokenRef.current = wixToken;
+
         console.log('[useSupabaseAuth] Got Wix token, exchanging for session...');
         const exchanged = await exchangeWixToken(wixToken);
 
@@ -128,23 +134,33 @@ export const useSupabaseAuth = () => {
         console.log('[useSupabaseAuth] Tab became visible, checking auth state...');
 
         try {
-          // Check current session
-          const { data } = await supabase.auth.getUser();
+          // First, try to refresh the session if it exists
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-          if (data?.user) {
-            console.log('[useSupabaseAuth] User still signed in after visibility change');
-            if (!mounted) return;
-            setUser(data.user);
-            setIsSignedIn(true);
-            return;
+          if (sessionData?.session) {
+            console.log('[useSupabaseAuth] Found existing session, checking if valid...');
+            // Session exists, verify the user
+            const { data, error } = await supabase.auth.getUser();
+
+            if (!error && data?.user) {
+              console.log('[useSupabaseAuth] User still signed in after visibility change');
+              if (!mounted) return;
+              setUser(data.user);
+              setIsSignedIn(true);
+              return;
+            } else {
+              console.log('[useSupabaseAuth] Session exists but user validation failed:', error?.message);
+            }
+          } else {
+            console.log('[useSupabaseAuth] No session found in storage');
           }
 
-          // No session, try to restore using Wix token
-          console.log('[useSupabaseAuth] No active session, attempting to restore...');
-          const wixToken = await accessTokenPromise;
+          // No valid session, try to restore using stored Wix token
+          console.log('[useSupabaseAuth] Attempting to restore using Wix token...');
 
-          if (wixToken) {
-            const exchanged = await exchangeWixToken(wixToken);
+          if (wixTokenRef.current) {
+            console.log('[useSupabaseAuth] Using stored Wix token to create new session');
+            const exchanged = await exchangeWixToken(wixTokenRef.current);
             if (exchanged) {
               const { data: newData } = await supabase.auth.getUser();
               if (!mounted) return;
@@ -152,7 +168,11 @@ export const useSupabaseAuth = () => {
               setIsSignedIn(Boolean(newData?.user));
               console.log('[useSupabaseAuth] Session restored on visibility change');
               return;
+            } else {
+              console.log('[useSupabaseAuth] Token exchange failed');
             }
+          } else {
+            console.log('[useSupabaseAuth] No stored Wix token available');
           }
 
           if (!mounted) return;
@@ -178,6 +198,7 @@ export const useSupabaseAuth = () => {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
+      wixTokenRef.current = null;
       setUser(null);
       setIsSignedIn(false);
     } catch (e) {
