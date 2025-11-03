@@ -1,5 +1,5 @@
-import { type NextRequest } from 'next/server';
-import { createBrowserClient } from '@supabase/ssr';
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { decodeJwt } from '@/app/utils/jwt-verify';
 
 // Expected shape of the Wix JWT payload
@@ -20,20 +20,27 @@ export async function POST(request: NextRequest) {
     // Get the Wix access token from the request
     const wixAccessToken = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!wixAccessToken) {
-      return new Response('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify and decode the Wix JWT
     const wixPayload = decodeJwt<WixPayload>(wixAccessToken);
     if (!wixPayload?.instanceId) {
-      return new Response('Invalid token', { status: 401 });
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Create a Supabase admin client for server operations
-    const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
+    // Create a response to set cookies properly
+    let cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }> = [];
+
+    // Create a Supabase server client with proper cookie handling
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSetArray) {
+          cookiesToSet = cookiesToSetArray;
+        },
       },
     });
 
@@ -63,29 +70,38 @@ export async function POST(request: NextRequest) {
 
       if (signUpError) {
         console.error('Error creating instance account:', signUpError);
-        return new Response('Error creating session', { status: 500 });
+        return NextResponse.json({ error: 'Error creating session' }, { status: 500 });
       }
 
-      return new Response(
-        JSON.stringify({
-          session: signUpData.session,
-        }),
-      );
+      // Create response with session and set cookies
+      const response = NextResponse.json({
+        session: signUpData.session,
+      });
+
+      cookiesToSet.forEach(({ name, value, options }) => {
+        response.cookies.set(name, value, options);
+      });
+
+      return response;
     }
 
     if (signInError) {
       console.error('Error signing in:', signInError);
-      return new Response('Error creating session', { status: 500 });
+      return NextResponse.json({ error: 'Error creating session' }, { status: 500 });
     }
 
-    // Return the Supabase session
-    return new Response(
-      JSON.stringify({
-        session: signInData.session,
-      }),
-    );
+    // Create response with session and set cookies
+    const response = NextResponse.json({
+      session: signInData.session,
+    });
+
+    cookiesToSet.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, options);
+    });
+
+    return response;
   } catch (error) {
     console.error('Session exchange error:', error);
-    return new Response('Internal server error', { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

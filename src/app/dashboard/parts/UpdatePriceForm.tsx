@@ -3,38 +3,26 @@ import {
   Box,
   Card,
   Cell,
-  Collapse,
-  Dropdown,
+  // Collapse,
+  // Dropdown,
   FormField,
   NumberInput,
   Layout,
   Text,
-  TextButton,
+  // TextButton,
 } from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
-import { ShippingCosts, ShippingMethodType, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
 import testIds from '@/app/utils/test-ids';
 
 export function UpdatePriceForm({
   title,
-  // unitOfMeasure,
-  shippingCosts,
-  // onUnitOfMeasureSelected,
-  onShippingCostsChanged,
-  // expandByDefault = false,
   price,
   updateStoreItemPrice,
   prefix,
 }: {
   title: string;
   price: number;
-  //   methodType: ShippingMethodType;
-  unitOfMeasure: ShippingUnitOfMeasure;
-  shippingCosts: ShippingCosts;
-  onUnitOfMeasureSelected: (type: ShippingUnitOfMeasure) => void;
-  onShippingCostsChanged: (shippingCosts: ShippingCosts) => void;
   updateStoreItemPrice: (newPrice: number) => void;
-  expandByDefault?: boolean;
   prefix?: string;
 }) {
   // const uomName =

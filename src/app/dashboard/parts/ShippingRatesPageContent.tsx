@@ -3,7 +3,6 @@ import { Box, Breadcrumbs, Button, Cell, Layout, Loader, Page } from '@wix/desig
 import { useSDK } from '@/app/utils/wix-sdk.client-only';
 import { useCallback, useEffect, useState } from 'react';
 import { useAccessToken } from '@/app/client-hooks/access-token';
-import { ShippingAppData, ShippingCosts, ShippingUnitOfMeasure } from '@/app/types/app-data.model';
 import { WixPageId } from '@/app/utils/navigation.const';
 import { useShippingAppData } from '@/app/client-hooks/app-data';
 import { getStoreItemsPrices, updateStoreItemPrice, bulkUpdateProductExtendedFields } from '@/app/actions/store';
@@ -20,10 +19,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
     dashboard: { showToast, navigate },
   } = useSDK();
 
-  const { data: persistedShippingAppData, isLoading: isLoadingAppData } = useShippingAppData();
-  const [currentShippingAppData, setCurrentShippingAppData] = useState<ShippingAppData | undefined>(
-    persistedShippingAppData,
-  );
+  const { isLoading: isLoadingAppData } = useShippingAppData();
 
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [silverPrice, setSilverPrice] = useState<number | null>(null);
@@ -128,28 +124,6 @@ export const ShippingRatesPageContent = ({}: {}) => {
     if (isSignedIn) void loadDashboardData();
   }, [isSignedIn, loadDashboardData]);
 
-  const setUomForMethod = useCallback(
-    (code: string) => (type: ShippingUnitOfMeasure) => {
-      setCurrentShippingAppData((prev) => ({
-        ...(prev as ShippingAppData),
-        shippingMethods: (prev!.shippingMethods || []).map((m) =>
-          m.code === code ? { ...m, unitOfMeasure: type } : m,
-        ),
-      }));
-    },
-    [],
-  );
-
-  const setCostsForMethod = useCallback(
-    (code: string) => (costs: ShippingCosts) => {
-      setCurrentShippingAppData((prev) => ({
-        ...(prev as ShippingAppData),
-        shippingMethods: (prev!.shippingMethods || []).map((m) => (m.code === code ? { ...m, costs } : m)),
-      }));
-    },
-    [],
-  );
-
   const setUpdatedGoldPriceForMethod = useCallback((newPrice: number) => setGoldPrice(newPrice), []);
   const setUpdatedSilverPriceForMethod = useCallback((newPrice: number) => setSilverPrice(newPrice), []);
   const setUpdatedPlatinumPriceForMethod = useCallback((newPrice: number) => setPlatinumPrice(newPrice), []);
@@ -241,10 +215,6 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   <UpdatePriceForm
                     price={goldPrice ?? 0}
                     title='Gold Price'
-                    unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
-                    onUnitOfMeasureSelected={setUomForMethod('1')}
-                    shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
-                    onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
                       setUpdatedGoldPriceForMethod(newPrice);
                     }}
@@ -254,10 +224,6 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   <UpdatePriceForm
                     title='Silver Price'
                     price={silverPrice ?? 0}
-                    unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
-                    onUnitOfMeasureSelected={setUomForMethod('1')}
-                    shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
-                    onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
                       setUpdatedSilverPriceForMethod(newPrice);
                     }}
@@ -267,10 +233,6 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   <UpdatePriceForm
                     title='Platinum Price'
                     price={platinumPrice ?? 0}
-                    unitOfMeasure={ShippingUnitOfMeasure.NUM_OF_ITEMS}
-                    onUnitOfMeasureSelected={setUomForMethod('1')}
-                    shippingCosts={{ gold: 0, silver: 0, platinum: 0 }}
-                    onShippingCostsChanged={setCostsForMethod('1')}
                     updateStoreItemPrice={async (newPrice: number) => {
                       setUpdatedPlatinumPriceForMethod(newPrice);
                     }}

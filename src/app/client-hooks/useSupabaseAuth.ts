@@ -19,6 +19,7 @@ export const useSupabaseAuth = () => {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
+          credentials: 'include', // Important: include cookies in the request
         });
 
         if (!response.ok) {
@@ -30,7 +31,7 @@ export const useSupabaseAuth = () => {
           throw new Error('No session in response');
         }
 
-        // Set the session in Supabase
+        // Set the session in Supabase - this will trigger auth state change
         await supabase.auth.setSession(session);
         return true;
       } catch (error) {
@@ -41,15 +42,16 @@ export const useSupabaseAuth = () => {
 
     const syncUser = async () => {
       try {
-        // First try to get existing user
+        // First try to get existing user from Supabase session (could be in cookies)
         const { data } = await supabase.auth.getUser();
 
         if (!data?.user) {
-          // If no user, try to get Wix token from URL or storage
+          // If no user, try to get Wix token from URL
           const params = new URLSearchParams(window.location.search);
           const accessToken = params.get('accessToken');
 
           if (accessToken) {
+            console.log('No existing session, attempting to exchange Wix token...');
             // Try to exchange the Wix token for a session
             const exchanged = await exchangeWixToken(accessToken);
             if (exchanged) {
@@ -58,9 +60,12 @@ export const useSupabaseAuth = () => {
               if (!mounted) return;
               setUser(newData?.user ?? null);
               setIsSignedIn(Boolean(newData?.user));
+              console.log('Session exchange successful, user signed in');
               return;
             }
           }
+        } else {
+          console.log('Existing session found, user already signed in');
         }
 
         if (!mounted) return;
@@ -79,35 +84,22 @@ export const useSupabaseAuth = () => {
     // subscribe to auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
+      console.log('Auth state changed:', _event, session?.user?.id);
       setUser(session?.user ?? null);
       setIsSignedIn(Boolean(session?.user));
-
-      // persist session into localStorage so we can attempt rehydration
-      try {
-        if (session) {
-          // store only the tokens needed for rehydration
-          const toStore = {
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-            expires_at: session.expires_at,
-          };
-          localStorage.setItem('app_supabase_session', JSON.stringify(toStore));
-        } else {
-          localStorage.removeItem('app_supabase_session');
-        }
-      } catch (e) {
-        // ignore localStorage errors (iframe storage restrictions)
-      }
+      setLoading(false);
     });
 
     const handleVisibility = async () => {
       if (document.visibilityState === 'visible') {
+        console.log('Tab became visible, checking auth state...');
         try {
           const { data } = await supabase.auth.getUser();
           if (!mounted) return;
 
           // If no user, try to get current Wix token
           if (!data?.user) {
+            console.log('No user on visibility change, checking for Wix token...');
             const params = new URLSearchParams(window.location.search);
             const accessToken = params.get('accessToken');
 
@@ -120,9 +112,12 @@ export const useSupabaseAuth = () => {
                 if (!mounted) return;
                 setUser(newData?.user ?? null);
                 setIsSignedIn(Boolean(newData?.user));
+                console.log('Session restored on visibility change');
                 return;
               }
             }
+          } else {
+            console.log('User still signed in after visibility change');
           }
 
           setUser(data?.user ?? null);
@@ -146,11 +141,6 @@ export const useSupabaseAuth = () => {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      try {
-        localStorage.removeItem('app_supabase_session');
-      } catch {
-        // ignore
-      }
       setUser(null);
       setIsSignedIn(false);
     } catch (e) {
