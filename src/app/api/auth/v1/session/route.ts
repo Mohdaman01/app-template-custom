@@ -25,7 +25,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Session API] Received token, attempting to decode...');
-    console.log('[Session API] Token preview:', wixAccessToken.substring(0, 50) + '...');
+    console.log('[Session API] Token value:', wixAccessToken);
+    console.log('[Session API] Token length:', wixAccessToken.length);
+    console.log('[Session API] Is bypass token?:', wixAccessToken === 'dev-bypass-token');
 
     // Check if this is a development bypass token
     const isDevelopmentBypass = wixAccessToken === 'dev-bypass-token';
