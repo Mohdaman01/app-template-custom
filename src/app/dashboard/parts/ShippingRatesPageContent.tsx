@@ -66,6 +66,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
     }
   }, [accessTokenPromise]);
 
+  useEffect(() => {
+    void loadDashboardData();
+  }, [loadDashboardData]);
+
   const onSave = useCallback(() => {
     setLoading(true);
     (async () => {
