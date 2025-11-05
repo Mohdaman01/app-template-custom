@@ -4,11 +4,15 @@ import { decodeJwt } from '@/app/utils/jwt-verify';
 
 // Expected shape of the Wix JWT payload
 interface WixPayload {
-  instanceId: string;
-  userId?: string;
-  vendorId?: string;
-  iat: number;
-  exp: number;
+  instance: {
+    instanceId: string;
+    uid?: string;
+    siteOwnerId?: string;
+    metaSiteId?: string;
+    appDefId?: string;
+  };
+  iat?: number;
+  exp?: number;
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -62,12 +66,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!wixPayload.instanceId) {
+      if (!wixPayload.instance?.instanceId) {
         console.error('[Session API] No instanceId in decoded token. Payload:', JSON.stringify(wixPayload));
         return NextResponse.json({ error: 'Invalid token - missing instanceId' }, { status: 401 });
       }
 
-      instanceId = wixPayload.instanceId;
+      instanceId = wixPayload.instance.instanceId;
     }
 
     console.log('[Session API] Token decoded successfully, instanceId:', instanceId);
