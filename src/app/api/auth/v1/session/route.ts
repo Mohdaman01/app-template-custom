@@ -92,7 +92,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Generate a unique email/password for this Wix instance
-    const email = `wix-instance-${instanceId}@app.local`;
+    // Use a valid email format by replacing hyphens with dots
+    const email = `wix.instance.${instanceId.replace(/-/g, '.')}@app.local`;
     const password = `wix-${instanceId}-${wixAppJwtKey.substring(0, 8)}`;
 
     console.log('[Session API] Attempting to sign in with instance credentials...');
