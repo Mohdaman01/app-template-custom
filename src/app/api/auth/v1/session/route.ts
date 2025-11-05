@@ -92,8 +92,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Generate a unique email/password for this Wix instance
-    // Use a valid email format with a proper domain
-    const email = `wix.instance.${instanceId.replace(/-/g, '.')}@wixapp.example.com`;
+    // Use a simple valid email format - remove all hyphens from instanceId
+    const cleanInstanceId = instanceId.replace(/-/g, '');
+    const email = `wix${cleanInstanceId}@example.com`;
     // Create a secure password using instanceId and app secret (min 6 chars required by Supabase)
     const password = `wix-${instanceId}-${wixAppJwtKey.substring(0, 16)}`;
 
