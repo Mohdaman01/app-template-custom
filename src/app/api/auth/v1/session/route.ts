@@ -92,14 +92,17 @@ export async function POST(request: NextRequest) {
     });
 
     // Generate a unique email/password for this Wix instance
-    // Use a simple valid email format - remove all hyphens from instanceId
+    // Use a standard email format with subdomain to ensure validity
+    // Format: <unique-id>@wix.example.com
     const cleanInstanceId = instanceId.replace(/-/g, '');
-    const email = `wix${cleanInstanceId}@example.com`;
+    const email = `${cleanInstanceId}@wix.example.com`;
     // Create a secure password using instanceId and app secret (min 6 chars required by Supabase)
     const password = `wix-${instanceId}-${wixAppJwtKey.substring(0, 16)}`;
 
+    console.log('[Session API] Attempting authentication with:');
     console.log('[Session API] Email:', email);
     console.log('[Session API] Password length:', password.length);
+    console.log('[Session API] Email validation - length:', email.length, 'has @:', email.includes('@'));
 
     console.log('[Session API] Attempting to sign in with instance credentials...');
 
@@ -109,31 +112,12 @@ export async function POST(request: NextRequest) {
       password,
     });
 
-    if (signInError?.message?.includes('Invalid login credentials')) {
-      console.log('[Session API] User not found, creating new account...');
-      // If sign in fails, create the account
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            wix_instance_id: instanceId,
-            wix_user_id: isDevelopmentBypass ? 'dev-user' : undefined,
-            wix_vendor_id: isDevelopmentBypass ? 'dev-vendor' : undefined,
-          },
-        },
-      });
+    // If sign in successful, return the session
+    if (signInData?.session && !signInError) {
+      console.log('[Session API] Sign in successful - user already exists');
 
-      if (signUpError) {
-        console.error('[Session API] Error creating instance account:', signUpError);
-        return NextResponse.json({ error: 'Error creating session', details: signUpError.message }, { status: 500 });
-      }
-
-      console.log('[Session API] Account created successfully');
-
-      // Create response with session and set cookies
       const response = NextResponse.json({
-        session: signUpData.session,
+        session: signInData.session,
       });
 
       cookiesToSet.forEach(({ name, value, options }) => {
@@ -143,23 +127,60 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
+    // Sign in failed - check if it's because user doesn't exist
     if (signInError) {
-      console.error('[Session API] Error signing in:', signInError);
-      return NextResponse.json({ error: 'Error creating session', details: signInError.message }, { status: 500 });
+      console.log('[Session API] Sign in error:', signInError.message);
+
+      // Only create account if credentials are invalid (user doesn't exist)
+      if (
+        signInError.message?.includes('Invalid login credentials') ||
+        signInError.message?.includes('Invalid email or password')
+      ) {
+        console.log('[Session API] User not found, creating new account...');
+        console.log('[Session API] Calling signUp with email:', email);
+
+        // If sign in fails, create the account
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: undefined, // Don't send confirmation email
+            data: {
+              wix_instance_id: instanceId,
+              wix_user_id: isDevelopmentBypass ? 'dev-user' : undefined,
+              wix_vendor_id: isDevelopmentBypass ? 'dev-vendor' : undefined,
+            },
+          },
+        });
+
+        if (signUpError) {
+          console.error('[Session API] Error creating instance account:', signUpError);
+          console.error('[Session API] Full error object:', JSON.stringify(signUpError, null, 2));
+          return NextResponse.json({ error: 'Error creating session', details: signUpError.message }, { status: 500 });
+        }
+
+        console.log('[Session API] Account created successfully');
+
+        // Create response with session and set cookies
+        const response = NextResponse.json({
+          session: signUpData.session,
+        });
+
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+
+        return response;
+      }
+
+      // Other sign in error - return it
+      console.error('[Session API] Sign in failed with error:', signInError);
+      return NextResponse.json({ error: 'Error signing in', details: signInError.message }, { status: 500 });
     }
 
-    console.log('[Session API] Sign in successful');
-
-    // Create response with session and set cookies
-    const response = NextResponse.json({
-      session: signInData.session,
-    });
-
-    cookiesToSet.forEach(({ name, value, options }) => {
-      response.cookies.set(name, value, options);
-    });
-
-    return response;
+    // This shouldn't happen, but handle it just in case
+    console.error('[Session API] Unexpected state - no session and no error');
+    return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
   } catch (error) {
     console.error('[Session API] Unexpected error:', error);
     return NextResponse.json(
