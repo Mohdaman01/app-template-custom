@@ -25,9 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Session API] Received token, attempting to decode...');
-    console.log('[Session API] Token value:', wixAccessToken);
     console.log('[Session API] Token length:', wixAccessToken.length);
-    console.log('[Session API] Is bypass token?:', wixAccessToken === 'dev-bypass-token');
 
     // Check if this is a development bypass token
     const isDevelopmentBypass = wixAccessToken === 'dev-bypass-token';
@@ -38,10 +36,17 @@ export async function POST(request: NextRequest) {
       console.log('[Session API] Using development bypass token');
       instanceId = 'dev-instance-local';
     } else {
+      // Remove Wix OAuth prefix if present (e.g., "OauthNG.JWS.")
+      let cleanToken = wixAccessToken;
+      if (wixAccessToken.startsWith('OauthNG.JWS.')) {
+        console.log('[Session API] Removing OauthNG.JWS. prefix from token');
+        cleanToken = wixAccessToken.replace('OauthNG.JWS.', '');
+      }
+
       // Verify and decode the Wix JWT
       let wixPayload: WixPayload | null;
       try {
-        wixPayload = decodeJwt<WixPayload>(wixAccessToken);
+        wixPayload = decodeJwt<WixPayload>(cleanToken);
         if (!wixPayload) {
           console.error('[Session API] decodeJwt returned null');
           return NextResponse.json({ error: 'Invalid token format - could not decode' }, { status: 401 });
