@@ -30,7 +30,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   >([]);
 
   const [loading, setLoading] = useState(false);
-  const { isSignedIn, loading: authLoading, signOut } = useSupabaseAuth();
+  // const { isSignedIn, loading: authLoading, signOut } = useSupabaseAuth();
   // const [currencyPrefix, setCurrencyPrefix] = useState('$');
 
   const accessTokenPromise = useAccessToken();
@@ -120,9 +120,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
   // auth is handled by useSupabaseAuth hook which subscribes to auth state and visibility
 
   // when signed in, load dashboard data
-  useEffect(() => {
-    if (isSignedIn) void loadDashboardData();
-  }, [isSignedIn, loadDashboardData]);
+  // useEffect(() => {
+  //   if (isSignedIn) void loadDashboardData();
+  // }, [isSignedIn, loadDashboardData]);
 
   const setUpdatedGoldPriceForMethod = useCallback((newPrice: number) => setGoldPrice(newPrice), []);
   const setUpdatedSilverPriceForMethod = useCallback((newPrice: number) => setSilverPrice(newPrice), []);
@@ -138,10 +138,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const ButtonsBar = useCallback(
     () => (
       <Box gap='SP2'>
-        {isSignedIn ? (
-          <>
-            <Button onClick={onSave}>{loading ? <Loader size='tiny' /> : 'Save'}</Button>
-            <Button
+        {/* {isSignedIn ? ( */}
+        <>
+          <Button onClick={onSave}>{loading ? <Loader size='tiny' /> : 'Save'}</Button>
+          {/* <Button
               skin='standard'
               onClick={async () => {
                 try {
@@ -154,12 +154,18 @@ export const ShippingRatesPageContent = ({}: {}) => {
               }}
             >
               Sign out
-            </Button>
-          </>
-        ) : null}
+            </Button> */}
+        </>
+        {/* ) : null} */}
       </Box>
     ),
-    [isSignedIn, onSave, loading, showToast, signOut],
+    [
+      // isSignedIn,
+      onSave,
+      loading,
+      showToast,
+      // signOut
+    ],
   );
 
   return (
@@ -182,7 +188,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       <Page.Content>
         <Layout>
           <Cell span={8}>
-            {authLoading ? (
+            {/* {authLoading ? (
               <Layout cols={1} alignItems='center' justifyItems='center'>
                 <Cell>
                   <Box width='100%' height='20vh' verticalAlign='middle'>
@@ -201,7 +207,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   />
                 </Cell>
               </Layout>
-            ) : isLoadingAppData ? (
+            ) :  */}
+            {isLoadingAppData ? (
               <Layout cols={1} alignItems='center' justifyItems='center'>
                 <Cell>
                   <Box width='100%' height='20vh' verticalAlign='middle'>

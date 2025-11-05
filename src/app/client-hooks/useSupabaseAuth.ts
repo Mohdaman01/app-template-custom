@@ -63,27 +63,45 @@ export const useSupabaseAuth = () => {
     // Handle visibility change (tab switching)
     const handleVisibility = async () => {
       if (document.visibilityState === 'visible') {
-        console.log('[useSupabaseAuth] Tab became visible, refreshing session...');
+        console.log('[useSupabaseAuth] Tab became visible, checking session...');
 
         try {
-          // Refresh the session when tab becomes visible
+          // First check if a session exists
           const {
-            data: { session },
-            error,
-          } = await supabase.auth.refreshSession();
+            data: { session: existingSession },
+          } = await supabase.auth.getSession();
 
-          if (error) {
-            console.error('[useSupabaseAuth] Error refreshing session:', error);
-          }
+          if (existingSession) {
+            console.log('[useSupabaseAuth] Session exists, refreshing...');
+            // Only refresh if a session exists
+            const {
+              data: { session },
+              error,
+            } = await supabase.auth.refreshSession();
 
-          if (!mounted) return;
+            if (error) {
+              console.error('[useSupabaseAuth] Error refreshing session:', error);
+              // Session might be expired, clear it
+              if (!mounted) return;
+              setUser(null);
+              setIsSignedIn(false);
+              return;
+            }
 
-          if (session?.user) {
-            console.log('[useSupabaseAuth] Session refreshed successfully');
-            setUser(session.user);
-            setIsSignedIn(true);
+            if (!mounted) return;
+
+            if (session?.user) {
+              console.log('[useSupabaseAuth] Session refreshed successfully');
+              setUser(session.user);
+              setIsSignedIn(true);
+            } else {
+              console.log('[useSupabaseAuth] No session after refresh');
+              setUser(null);
+              setIsSignedIn(false);
+            }
           } else {
-            console.log('[useSupabaseAuth] No session after refresh');
+            console.log('[useSupabaseAuth] No existing session to refresh');
+            if (!mounted) return;
             setUser(null);
             setIsSignedIn(false);
           }
