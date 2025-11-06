@@ -1,4 +1,3 @@
-// import { useEffect, useState } from 'react';
 import {
   Box,
   Card,
@@ -12,17 +11,20 @@ import {
   // TextButton,
 } from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
-import testIds from '@/app/utils/test-ids';
 
 export function UpdatePriceForm({
   title,
   price,
-  updateStoreItemPrice,
+  updateStoreItemPriceGold,
+  updateStoreItemPriceSilver,
+  updateStoreItemPricePlatinum,
   prefix,
 }: {
   title: string;
   price: number;
-  updateStoreItemPrice: (newPrice: number) => void;
+  updateStoreItemPriceGold: (newPrice: number) => void;
+  updateStoreItemPriceSilver: (newPrice: number) => void;
+  updateStoreItemPricePlatinum: (newPrice: number) => void;
   prefix?: string;
 }) {
   // const uomName =
@@ -34,7 +36,7 @@ export function UpdatePriceForm({
   // const [isOpen, setIsOpen] = useState(expandByDefault);
 
   return (
-    <Card dataHook={testIds.DASHBOARD.SHIPPING_METHOD}>
+    <Card>
       <Card.Header
         title={title}
         // suffix={
@@ -43,30 +45,33 @@ export function UpdatePriceForm({
         //   </TextButton>
         // }
       />
-      {/* <Collapse open={isOpen}> */}
       <Card.Divider />
-      <Card.Content dataHook={testIds.DASHBOARD.SHIPPING_METHOD_FORM}>
+      <Card.Content>
         <Box direction='vertical' gap='SP7'>
-          {/* <FormField label='Parameter'>
-              <Dropdown
-                selectedId={unitOfMeasure}
-                onSelect={(option, sameOptionWasPicked) =>
-                  sameOptionWasPicked ? null : onUnitOfMeasureSelected(option.id as ShippingUnitOfMeasure)
-                }
-                options={[
-                  { id: ShippingUnitOfMeasure.NUM_OF_ITEMS, value: 'Number of items' },
-                  { id: ShippingUnitOfMeasure.WEIGHT_IN_KG, value: 'Weight in kg' },
-                  { id: ShippingUnitOfMeasure.WEIGHT_IN_LB, value: 'Weight in lb' },
-                ]}
-                placeholder='Select parameter'
-              />
-            </FormField> */}
-
           <Box direction='vertical' gap='SP4'>
-            <Text>Set Price:</Text>
             <Layout>
               <Cell span={8}>
-                <FormField label={`Enter Price`}>
+                <Text>Gold Price</Text>
+                <FormField>
+                  <NumberInput
+                    prefix={typeof prefix === 'string' ? prefix : '$'}
+                    suffix='per gram'
+                    placeholder='Enter Price'
+                    type='number'
+                    value={price}
+                    onChange={(value) => {
+                      updateStoreItemPriceGold(value ?? 0);
+                    }}
+                  />
+                </FormField>
+              </Cell>
+            </Layout>
+          </Box>
+          <Box direction='vertical' gap='SP4'>
+            <Layout>
+              <Cell span={8}>
+                <Text>Silver Price</Text>
+                <FormField>
                   <NumberInput
                     prefix={typeof prefix === 'string' ? prefix : '$'}
                     suffix='per gram'
@@ -74,58 +79,34 @@ export function UpdatePriceForm({
                     type='number'
                     value={price}
                     onChange={(value) => {
-                      updateStoreItemPrice(value ?? 0);
+                      updateStoreItemPriceSilver(value ?? 0);
                     }}
                   />
                 </FormField>
               </Cell>
-              {/* <Cell span={4}>
-                <FormField label={`Silver`}>
-                  <Input
-                    prefix={<Input.Affix>$</Input.Affix>}
-                    suffix={<Input.Affix>per gram</Input.Affix>}
+            </Layout>
+          </Box>
+          <Box direction='vertical' gap='SP4'>
+            <Layout>
+              <Cell span={8}>
+                <Text>Platinum Price</Text>
+                <FormField>
+                  <NumberInput
+                    prefix={typeof prefix === 'string' ? prefix : '$'}
+                    suffix='per gram'
                     placeholder='Select totalPrice'
                     type='number'
-                    value={shippingCosts.silver}
-                    onChange={(e) => {
-                      onShippingCostsChanged({ ...shippingCosts, silver: Number(e.currentTarget.value) });
+                    value={price}
+                    onChange={(value) => {
+                      updateStoreItemPricePlatinum(value ?? 0);
                     }}
                   />
                 </FormField>
               </Cell>
-              <Cell span={4}>
-                <FormField label={`Platinum`}>
-                  <Input
-                    prefix={<Input.Affix>$</Input.Affix>}
-                    suffix={<Input.Affix>per gram</Input.Affix>}
-                    placeholder='Select totalPrice'
-                    type='number'
-                    value={shippingCosts.platinum}
-                    onChange={(e) => {
-                      onShippingCostsChanged({ ...shippingCosts, platinum: Number(e.currentTarget.value) });
-                    }}
-                  />
-                </FormField>
-              </Cell> */}
-              {/* <Cell span={4}>
-                  <FormField label={`SetPlatinum`}>
-                    <Input
-                      prefix={<Input.Affix>$</Input.Affix>}
-                      suffix={<Input.Affix>per {uomName}</Input.Affix>}
-                      value={shippingCosts.thirdAndUp}
-                      onChange={(e) => {
-                        onShippingCostsChanged({ ...shippingCosts, thirdAndUp: Number(e.currentTarget.value) });
-                      }}
-                      placeholder='Select totalPrice'
-                      type='number'
-                    />
-                  </FormField>
-                </Cell> */}
             </Layout>
           </Box>
         </Box>
       </Card.Content>
-      {/* </Collapse> */}
     </Card>
   );
 }

@@ -11,7 +11,6 @@ import {
   Dropdown,
 } from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
-import testIds from '@/app/utils/test-ids';
 import { testProducts } from '../../../..//dummy';
 
 interface ProductUpdate {
@@ -90,11 +89,11 @@ export function StoreProductsMetalTypeAndWeight({
   };
 
   return (
-    <Card dataHook={testIds.DASHBOARD.SHIPPING_METHOD}>
+    <Card>
       <Card.Header title={title} />
       <Card.Divider />
-      <Card.Content dataHook={testIds.DASHBOARD.SHIPPING_METHOD_FORM}>
-        <Box direction='vertical' gap='SP7'>
+      <Card.Content>
+        <Box direction='vertical' gap='SP7' scrollBehavior='auto' maxHeight='80vh' overflow='auto'>
           {displayProducts && displayProducts.length > 0 ? (
             displayProducts.map((product, index) => {
               const currentUpdate = productUpdates[product._id];

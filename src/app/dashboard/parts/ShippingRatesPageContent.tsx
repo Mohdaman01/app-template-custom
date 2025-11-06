@@ -226,12 +226,18 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   <UpdatePriceForm
                     price={goldPrice ?? 0}
                     title='Gold Price'
-                    updateStoreItemPrice={async (newPrice: number) => {
+                    updateStoreItemPriceGold={async (newPrice: number) => {
                       setUpdatedGoldPriceForMethod(newPrice);
+                    }}
+                    updateStoreItemPriceSilver={async (newPrice: number) => {
+                      setUpdatedSilverPriceForMethod(newPrice);
+                    }}
+                    updateStoreItemPricePlatinum={async (newPrice: number) => {
+                      setUpdatedPlatinumPriceForMethod(newPrice);
                     }}
                   />
                 </Cell>
-                <Cell key={2}>
+                {/* <Cell key={2}>
                   <UpdatePriceForm
                     title='Silver Price'
                     price={silverPrice ?? 0}
@@ -248,7 +254,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                       setUpdatedPlatinumPriceForMethod(newPrice);
                     }}
                   />
-                </Cell>
+                </Cell> */}
                 <Cell key={4}>
                   <StoreProductsMetalTypeAndWeight
                     title='Current Products'
