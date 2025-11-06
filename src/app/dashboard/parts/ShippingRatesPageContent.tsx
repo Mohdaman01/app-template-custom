@@ -224,7 +224,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
               <Layout>
                 <Cell key={1}>
                   <UpdatePriceForm
-                    price={goldPrice ?? 0}
+                    goldPrice={goldPrice ?? 0}
+                    silverPrice={silverPrice ?? 0}
+                    platinumPrice={platinumPrice ?? 0}
                     title='Gold Price'
                     updateStoreItemPriceGold={async (newPrice: number) => {
                       setUpdatedGoldPriceForMethod(newPrice);

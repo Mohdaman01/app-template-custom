@@ -14,14 +14,18 @@ import {
 
 export function UpdatePriceForm({
   title,
-  price,
+  goldPrice,
+  silverPrice,
+  platinumPrice,
   updateStoreItemPriceGold,
   updateStoreItemPriceSilver,
   updateStoreItemPricePlatinum,
   prefix,
 }: {
   title: string;
-  price: number;
+  goldPrice: number;
+  silverPrice: number;
+  platinumPrice: number;
   updateStoreItemPriceGold: (newPrice: number) => void;
   updateStoreItemPriceSilver: (newPrice: number) => void;
   updateStoreItemPricePlatinum: (newPrice: number) => void;
@@ -58,7 +62,7 @@ export function UpdatePriceForm({
                     suffix='per gram'
                     placeholder='Enter Price'
                     type='number'
-                    value={price}
+                    value={goldPrice}
                     onChange={(value) => {
                       updateStoreItemPriceGold(value ?? 0);
                     }}
@@ -77,7 +81,7 @@ export function UpdatePriceForm({
                     suffix='per gram'
                     placeholder='Select totalPrice'
                     type='number'
-                    value={price}
+                    value={silverPrice}
                     onChange={(value) => {
                       updateStoreItemPriceSilver(value ?? 0);
                     }}
@@ -96,7 +100,7 @@ export function UpdatePriceForm({
                     suffix='per gram'
                     placeholder='Select totalPrice'
                     type='number'
-                    value={price}
+                    value={platinumPrice}
                     onChange={(value) => {
                       updateStoreItemPricePlatinum(value ?? 0);
                     }}
