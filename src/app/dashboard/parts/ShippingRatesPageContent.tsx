@@ -1,5 +1,18 @@
 'use client';
-import { Box, Breadcrumbs, Button, Cell, Layout, Loader, Page } from '@wix/design-system';
+import {
+  Box,
+  Breadcrumbs,
+  Button,
+  Card,
+  Cell,
+  FormField,
+  Layout,
+  Loader,
+  Page,
+  Text,
+  ToggleSwitch,
+  Dropdown,
+} from '@wix/design-system';
 import { useSDK } from '@/app/utils/wix-sdk.client-only';
 import { useCallback, useEffect, useState } from 'react';
 import { useAccessToken } from '@/app/client-hooks/access-token';
@@ -11,8 +24,29 @@ import testIds from '@/app/utils/test-ids';
 import { UpdatePriceForm } from './UpdatePriceForm';
 import { StoreProductsMetalTypeAndWeight } from './StoreProductsMetalTypeAndWight';
 import { createClient } from '@/app/utils/supabase/client';
+import { useMetalPrices } from '@/app/client-hooks/metal-prices';
 import { AuthSignIn } from './AuthSignIn';
 import { useSupabaseAuth } from '@/app/client-hooks/useSupabaseAuth';
+
+const CURRENCY_OPTIONS = [
+  { id: 'USD', value: 'USD - US Dollar' },
+  { id: 'EUR', value: 'EUR - Euro' },
+  { id: 'GBP', value: 'GBP - British Pound' },
+  { id: 'INR', value: 'INR - Indian Rupee' },
+  { id: 'AUD', value: 'AUD - Australian Dollar' },
+  { id: 'CAD', value: 'CAD - Canadian Dollar' },
+  { id: 'JPY', value: 'JPY - Japanese Yen' },
+];
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  INR: '₹',
+  AUD: 'A$',
+  CAD: 'C$',
+  JPY: '¥',
+};
 
 export const ShippingRatesPageContent = ({}: {}) => {
   const {
@@ -30,10 +64,14 @@ export const ShippingRatesPageContent = ({}: {}) => {
   >([]);
 
   const [loading, setLoading] = useState(false);
+  const [useAutoPricing, setUseAutoPricing] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  const [lastApiUpdate, setLastApiUpdate] = useState<string | null>(null);
   // const { isSignedIn, loading: authLoading, signOut } = useSupabaseAuth();
   // const [currencyPrefix, setCurrencyPrefix] = useState('$');
 
   const accessTokenPromise = useAccessToken();
+  const { fetchPrices, loading: pricesLoading, error: pricesError, lastFetch, isFromCache } = useMetalPrices();
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -55,6 +93,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
       if (rules?.goldPrice) setGoldPrice(rules.goldPrice);
       if (rules?.silverPrice) setSilverPrice(rules.silverPrice);
       if (rules?.platinumPrice) setPlatinumPrice(rules.platinumPrice);
+      if (rules?.currency) setSelectedCurrency(rules.currency);
+      if (rules?.use_auto_pricing !== undefined) setUseAutoPricing(rules.use_auto_pricing);
+      if (rules?.last_api_update) setLastApiUpdate(rules.last_api_update);
 
       const products = await getStoreItemsPrices({ accessToken });
       console.log('Fetched store products for dashboard:', products);
@@ -69,6 +110,30 @@ export const ShippingRatesPageContent = ({}: {}) => {
   useEffect(() => {
     void loadDashboardData();
   }, [loadDashboardData]);
+
+  const handleFetchLivePrices = useCallback(async () => {
+    const prices = await fetchPrices(selectedCurrency);
+    if (prices) {
+      setGoldPrice(prices.goldPrice);
+      setSilverPrice(prices.silverPrice);
+      setPlatinumPrice(prices.platinumPrice);
+      setLastApiUpdate(new Date().toISOString());
+
+      const message = prices.fromCache
+        ? `Prices loaded from cache (${prices.currency}). Next API call available after ${new Date(prices.expiresAt!).toLocaleTimeString()}`
+        : `Fresh prices fetched from API (${prices.currency}). Valid for 1 hour.`;
+
+      showToast({
+        message,
+        type: 'success',
+      });
+    } else if (pricesError) {
+      showToast({
+        message: `Failed to fetch live prices: ${pricesError}`,
+        type: 'error',
+      });
+    }
+  }, [fetchPrices, selectedCurrency, showToast, pricesError]);
 
   const onSave = useCallback(() => {
     setLoading(true);
@@ -85,6 +150,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         if (goldPrice !== null) payload.goldPrice = goldPrice;
         if (silverPrice !== null) payload.silverPrice = silverPrice;
         if (platinumPrice !== null) payload.platinumPrice = platinumPrice;
+        if (lastApiUpdate) payload.last_api_update = lastApiUpdate;
 
         const { data: rules, error } = await supabase
           .from('Dashboard Rules')
@@ -119,7 +185,17 @@ export const ShippingRatesPageContent = ({}: {}) => {
         setLoading(false);
       }
     })();
-  }, [accessTokenPromise, goldPrice, silverPrice, platinumPrice, productUpdates, showToast]);
+  }, [
+    accessTokenPromise,
+    goldPrice,
+    silverPrice,
+    platinumPrice,
+    productUpdates,
+    showToast,
+    selectedCurrency,
+    useAutoPricing,
+    lastApiUpdate,
+  ]);
 
   // auth is handled by useSupabaseAuth hook which subscribes to auth state and visibility
 
@@ -138,6 +214,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
     },
     [],
   );
+  const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency] || '$';
 
   const ButtonsBar = useCallback(
     () => (
@@ -222,12 +299,77 @@ export const ShippingRatesPageContent = ({}: {}) => {
               </Layout>
             ) : (
               <Layout>
+                {/* Live Price Fetching Card */}
+                <Cell>
+                  <Card>
+                    <Card.Header title='Automatic Price Updates (Optional)' />
+                    <Card.Divider />
+                    <Card.Content>
+                      <Box direction='vertical' gap='SP4'>
+                        <FormField
+                          label='Enable Automatic Pricing'
+                          infoContent='When enabled, you can fetch live metal prices from an external API. Manual entry is still available.'
+                        >
+                          <ToggleSwitch checked={useAutoPricing} onChange={() => setUseAutoPricing(!useAutoPricing)} />
+                        </FormField>
+
+                        {useAutoPricing && (
+                          <>
+                            <Layout>
+                              <Cell span={6}>
+                                <FormField label='Currency'>
+                                  <Dropdown
+                                    options={CURRENCY_OPTIONS}
+                                    selectedId={selectedCurrency}
+                                    onSelect={(option) => setSelectedCurrency(option.id as string)}
+                                  />
+                                </FormField>
+                              </Cell>
+                              <Cell span={6}>
+                                <FormField label='Fetch Live Prices'>
+                                  <Button
+                                    onClick={handleFetchLivePrices}
+                                    disabled={pricesLoading}
+                                    prefixIcon={pricesLoading ? <Loader size='tiny' /> : undefined}
+                                  >
+                                    {pricesLoading ? 'Fetching...' : 'Fetch Now'}
+                                  </Button>
+                                </FormField>
+                              </Cell>
+                            </Layout>
+
+                            {lastApiUpdate && (
+                              <Box direction='vertical' gap='SP1'>
+                                <Text size='small' secondary>
+                                  Last fetched: {new Date(lastApiUpdate).toLocaleString()}
+                                </Text>
+                                {isFromCache && (
+                                  <Text size='small' skin='success'>
+                                    ✓ Loaded from cache (API calls limited to once per hour)
+                                  </Text>
+                                )}
+                              </Box>
+                            )}
+
+                            {pricesError && (
+                              <Text size='small' skin='error'>
+                                Error: {pricesError}
+                              </Text>
+                            )}
+                          </>
+                        )}
+                      </Box>
+                    </Card.Content>
+                  </Card>
+                </Cell>
+
+                {/* Manual Price Entry Forms */}
                 <Cell key={1}>
                   <UpdatePriceForm
                     goldPrice={goldPrice ?? 0}
                     silverPrice={silverPrice ?? 0}
                     platinumPrice={platinumPrice ?? 0}
-                    title='Gold Price'
+                    title='Set Metal Prices'
                     updateStoreItemPriceGold={async (newPrice: number) => {
                       setUpdatedGoldPriceForMethod(newPrice);
                     }}
@@ -259,7 +401,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 </Cell> */}
                 <Cell key={4}>
                   <StoreProductsMetalTypeAndWeight
-                    title='Current Products'
+                    title='Set Current Products (Metal type/Weight in grams)'
                     productsToSet={productsToSet}
                     onProductUpdatesChanged={handleProductUpdatesChanged}
                   />

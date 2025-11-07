@@ -1,3 +1,4 @@
+// import { useState } from 'react';
 import {
   Box,
   Card,
@@ -8,6 +9,7 @@ import {
   NumberInput,
   Layout,
   Text,
+  // ToggleSwitch,
   // TextButton,
 } from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
@@ -31,6 +33,7 @@ export function UpdatePriceForm({
   updateStoreItemPricePlatinum: (newPrice: number) => void;
   prefix?: string;
 }) {
+  // const [checked, setChecked] = useState(false);
   // const uomName =
   //   unitOfMeasure === ShippingUnitOfMeasure.NUM_OF_ITEMS
   //     ? 'item'
@@ -43,6 +46,12 @@ export function UpdatePriceForm({
     <Card>
       <Card.Header
         title={title}
+        // suffix={
+        //   <Box gap='SP2' align='center'>
+        //     <Text>{checked ? 'Disabled Auto Set Price' : 'Enabled Auto Set Price'}</Text>
+        //     <ToggleSwitch checked={checked} onChange={() => setChecked(!checked)} />
+        //   </Box>
+        // }
         // suffix={
         //   <TextButton dataHook={testIds.DASHBOARD.SHIPPING_METHOD_EXPAND} onClick={() => setIsOpen(!isOpen)}>
         //     {isOpen ? <ChevronUp /> : <ChevronDown />}
