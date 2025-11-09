@@ -112,28 +112,52 @@ export const ShippingRatesPageContent = ({}: {}) => {
   }, [loadDashboardData]);
 
   const handleFetchLivePrices = useCallback(async () => {
-    const prices = await fetchPrices(selectedCurrency);
+    // Pass useDatabase=true when auto-pricing is enabled
+    const prices = await fetchPrices(selectedCurrency, useAutoPricing);
     if (prices) {
       setGoldPrice(prices.goldPrice);
       setSilverPrice(prices.silverPrice);
       setPlatinumPrice(prices.platinumPrice);
       setLastApiUpdate(new Date().toISOString());
 
-      const message = prices.fromCache
-        ? `Prices loaded from cache (${prices.currency}). Next API call available after ${new Date(prices.expiresAt!).toLocaleTimeString()}`
-        : `Fresh prices fetched from API (${prices.currency}). Valid for 1 hour.`;
+      let message = '';
+      if (prices.fromDatabase) {
+        message = `Prices loaded from database (${prices.currency}). Last updated ${prices.ageHours} hours ago. Next automatic update in ${prices.nextUpdateIn}.`;
+      } else if (prices.fromCache) {
+        message = `Prices loaded from cache (${prices.currency}). Next API call available after ${new Date(prices.expiresAt!).toLocaleTimeString()}`;
+      } else {
+        message = `Fresh prices fetched from API (${prices.currency}). Valid for 1 hour.`;
+      }
 
       showToast({
         message,
         type: 'success',
       });
+
+      // Save to Dashboard Rules
+      const accessToken = (await accessTokenPromise)!;
+      const appInstance = await getAppInstance({ accessToken });
+      const instanceId = appInstance?.instance?.instanceId;
+      const supabase = createClient();
+
+      await supabase
+        .from('Dashboard Rules')
+        .update({
+          goldPrice: prices.goldPrice,
+          silverPrice: prices.silverPrice,
+          platinumPrice: prices.platinumPrice,
+          currency: selectedCurrency,
+          use_auto_pricing: useAutoPricing,
+          last_api_update: new Date().toISOString(),
+        })
+        .eq('instance_id', instanceId);
     } else if (pricesError) {
       showToast({
         message: `Failed to fetch live prices: ${pricesError}`,
         type: 'error',
       });
     }
-  }, [fetchPrices, selectedCurrency, showToast, pricesError]);
+  }, [fetchPrices, selectedCurrency, useAutoPricing, showToast, pricesError, accessTokenPromise]);
 
   const onSave = useCallback(() => {
     setLoading(true);
