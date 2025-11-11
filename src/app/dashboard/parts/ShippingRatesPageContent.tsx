@@ -25,8 +25,8 @@ import { UpdatePriceForm } from './UpdatePriceForm';
 import { StoreProductsMetalTypeAndWeight } from './StoreProductsMetalTypeAndWight';
 import { createClient } from '@/app/utils/supabase/client';
 import { useMetalPrices } from '@/app/client-hooks/metal-prices';
-import { AuthSignIn } from './AuthSignIn';
-import { useSupabaseAuth } from '@/app/client-hooks/useSupabaseAuth';
+// import { AuthSignIn } from './AuthSignIn';
+// import { useSupabaseAuth } from '@/app/client-hooks/useSupabaseAuth';
 
 const CURRENCY_OPTIONS = [
   { id: 'USD', value: 'USD - US Dollar' },
@@ -79,8 +79,6 @@ export const ShippingRatesPageContent = ({}: {}) => {
       const accessToken = (await accessTokenPromise)!;
       const appInstance = await getAppInstance({ accessToken });
       const sitePaymentCurrency = appInstance?.site?.paymentCurrency || 'USD';
-      const siteCurrencySymbol = CURRENCY_SYMBOLS[sitePaymentCurrency] || '$';
-      setCurrencyPrefix(siteCurrencySymbol);
       const instanceId = appInstance?.instance?.instanceId;
       const supabase = createClient();
       const { data: rules, error } = await supabase
@@ -88,6 +86,16 @@ export const ShippingRatesPageContent = ({}: {}) => {
         .select('*')
         .eq('instance_id', instanceId)
         .maybeSingle();
+
+      if (!rules?.currency) {
+        const updateCurrency = await supabase
+          .from('Dashboard Rules')
+          .update({ currency: sitePaymentCurrency })
+          .eq('instance_id', instanceId)
+          .select()
+          .maybeSingle();
+        console.log('Updated currency to site currency: ', updateCurrency);
+      }
 
       if (error) {
         console.error('Failed to fetch dashboard rules', error);
@@ -100,6 +108,16 @@ export const ShippingRatesPageContent = ({}: {}) => {
       if (rules?.currency) setSelectedCurrency(rules.currency);
       if (rules?.use_auto_pricing !== undefined) setUseAutoPricing(rules.use_auto_pricing);
       if (rules?.last_api_update) setLastApiUpdate(rules.last_api_update);
+      if (rules?.currency) {
+        setSelectedCurrency(rules.currency);
+      } else {
+        setSelectedCurrency(sitePaymentCurrency);
+      }
+      if (rules?.currency) {
+        setCurrencyPrefix(CURRENCY_SYMBOLS[rules.currency] || '$');
+      } else {
+        setCurrencyPrefix(CURRENCY_SYMBOLS[sitePaymentCurrency] || '$');
+      }
 
       const products = await getStoreItemsPrices({ accessToken });
       console.log('Fetched store products for dashboard:', products);
@@ -249,7 +267,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
       <Box gap='SP2'>
         {/* {isSignedIn ? ( */}
         <>
-          <Button onClick={onSave}>{loading ? <Loader size='tiny' /> : 'Save'}</Button>
+          <Button onClick={onSave} disabled={!useAutoPricing}>
+            {loading ? <Loader size='tiny' /> : 'Save'}
+          </Button>
           {/* <Button
               skin='standard'
               onClick={async () => {
@@ -338,7 +358,14 @@ export const ShippingRatesPageContent = ({}: {}) => {
                           label='Enable Automatic Pricing'
                           infoContent='When enabled, you can fetch live metal prices from an external API. Manual entry is still available.'
                         >
-                          <ToggleSwitch checked={useAutoPricing} onChange={() => setUseAutoPricing(!useAutoPricing)} />
+                          <ToggleSwitch
+                            checked={useAutoPricing}
+                            onChange={async () => {
+                              setUseAutoPricing(!useAutoPricing);
+                              await handleFetchLivePrices();
+                              onSave();
+                            }}
+                          />
                         </FormField>
 
                         {useAutoPricing && (
@@ -347,13 +374,14 @@ export const ShippingRatesPageContent = ({}: {}) => {
                               <Cell span={6}>
                                 <FormField label='Currency'>
                                   <Dropdown
+                                    disabled={true}
                                     options={CURRENCY_OPTIONS}
                                     selectedId={selectedCurrency}
                                     onSelect={(option) => setSelectedCurrency(option.id as string)}
                                   />
                                 </FormField>
                               </Cell>
-                              <Cell span={6}>
+                              {/* <Cell span={6}>
                                 <FormField label='Fetch Live Prices'>
                                   <Button
                                     onClick={handleFetchLivePrices}
@@ -363,7 +391,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                                     {pricesLoading ? 'Fetching...' : 'Fetch Now'}
                                   </Button>
                                 </FormField>
-                              </Cell>
+                              </Cell> */}
                             </Layout>
 
                             {lastApiUpdate && (

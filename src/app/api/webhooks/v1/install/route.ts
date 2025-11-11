@@ -5,8 +5,6 @@ import { createClient, createServiceClient } from '@/app/utils/supabase/server';
 import { createClient as wixClient } from '@wix/sdk/client';
 import { AppStrategy } from '@wix/sdk/auth/wix-app-oauth';
 import { products as Products, productsV3 as ProdcutsV3, catalogVersioning } from '@wix/stores';
-import { site } from '@wix/site';
-import { site as siteModule } from '@wix/site-site';
 
 export async function POST(request: NextRequest) {
   console.info('Webhook::install - called');
@@ -35,19 +33,6 @@ export async function POST(request: NextRequest) {
   console.log('after app client');
 
   const { items } = await appClient.Products.queryProducts().find();
-
-  try {
-    const siteClient = wixClient({
-      auth: site.auth(),
-      host: site.host({ applicationId: process.env.WIX_APP_ID! }),
-      modules: { site: siteModule },
-    });
-
-    const currency = await siteClient.site.currency();
-    console.log('site currency: ', currency);
-  } catch (e) {
-    console.error('Failed to fetch site currency: ', e);
-  }
 
   // console.log('items from site: ', items);
 

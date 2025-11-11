@@ -38,38 +38,59 @@ export async function POST(request: NextRequest) {
 
     console.log('[CRON] Starting metal prices update job');
 
-    // Fetch prices for all supported currencies
+    // Make a single API call with base currency (INR or USD)
+    const baseCurrency = 'INR';
+    console.log(`[CRON] Fetching prices in ${baseCurrency} with all currency rates`);
+
+    const response = await fetch(`https://api.metals.dev/v1/latest?api_key=${apiKey}&currency=${baseCurrency}&unit=g`, {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.status !== 'success') {
+      throw new Error('API request failed');
+    }
+
+    // Extract base metal prices and currency rates
+    const baseGoldPrice = data.metals.gold;
+    const baseSilverPrice = data.metals.silver;
+    const basePlatinumPrice = data.metals.platinum;
+    const currencyRates = data.currencies;
+    const apiTimestamp = data.timestamps.metal;
+    const fetchedAt = new Date().toISOString();
+
+    // Supported currencies to store
     const currencies = ['USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD', 'JPY'];
     const cookieStore = await cookies();
     const supabase = createServiceClient ? createServiceClient(cookieStore) : createClient(cookieStore);
 
+    // Calculate prices for each currency using the conversion rates
     const results = await Promise.allSettled(
       currencies.map(async (currency) => {
         try {
-          console.log(`[CRON] Fetching prices for ${currency}`);
+          console.log(`[CRON] Calculating prices for ${currency}`);
 
-          const response = await fetch(
-            `https://api.metals.dev/v1/latest?api_key=${apiKey}&currency=${currency}&unit=g`,
-            { cache: 'no-store' },
-          );
+          // Get the conversion rate for this currency
+          // If base is INR and we want USD, we divide by the rate (INR to USD)
+          const conversionRate = currency === baseCurrency ? 1 : currencyRates[currency] || 1;
 
-          if (!response.ok) {
-            throw new Error(`API responded with status: ${response.status}`);
-          }
-
-          const data = await response.json();
-
-          if (data.status !== 'success') {
-            throw new Error(`API request failed for ${currency}`);
-          }
+          // Calculate prices in target currency
+          const goldPrice = Number((baseGoldPrice / conversionRate).toFixed(2));
+          const silverPrice = Number((baseSilverPrice / conversionRate).toFixed(2));
+          const platinumPrice = Number((basePlatinumPrice / conversionRate).toFixed(2));
 
           const priceRecord = {
             currency,
-            gold_price: Number(data.metals.gold.toFixed(2)),
-            silver_price: Number(data.metals.silver.toFixed(2)),
-            platinum_price: Number(data.metals.platinum.toFixed(2)),
-            api_timestamp: data.timestamps.metal,
-            fetched_at: new Date().toISOString(),
+            gold_price: goldPrice,
+            silver_price: silverPrice,
+            platinum_price: platinumPrice,
+            api_timestamp: apiTimestamp,
+            fetched_at: fetchedAt,
           };
 
           // Upsert into metal_prices table
@@ -79,6 +100,22 @@ export async function POST(request: NextRequest) {
 
           if (upsertError) {
             throw new Error(`Failed to store prices for ${currency}: ${upsertError.message}`);
+          }
+
+          const updateUserPrices = await supabase
+            .from('Dashboard Rules')
+            .update({
+              goldPrice: priceRecord.gold_price,
+              silverPrice: priceRecord.silver_price,
+              platinumPrice: priceRecord.platinum_price,
+              last_api_update: priceRecord.fetched_at,
+            })
+            .eq('use_auto_pricing', true)
+            .eq('pro_user', true)
+            .eq('currency', currency);
+
+          if (updateUserPrices.error) {
+            throw new Error(`Failed to update user prices for ${currency}: ${updateUserPrices.error.message}`);
           }
 
           console.log(`[CRON] Successfully updated prices for ${currency}`);
