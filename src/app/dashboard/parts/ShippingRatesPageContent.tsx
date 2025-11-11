@@ -262,7 +262,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
     },
     [],
   );
-  const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency] || '$';
+  // const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency] || '$';
 
   const ButtonsBar = useCallback(
     () => (
@@ -366,6 +366,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                               setUseAutoPricing(!useAutoPricing);
                               if (useAutoPricing === true) {
                                 await handleFetchLivePrices();
+                                console.log('Auto_Price_Status: ', useAutoPricing);
                                 onSave();
                               }
                             }}
