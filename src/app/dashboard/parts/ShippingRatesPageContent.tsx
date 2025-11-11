@@ -269,7 +269,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       <Box gap='SP2'>
         {/* {isSignedIn ? ( */}
         <>
-          <Button onClick={onSave} disabled={!useAutoPricing}>
+          <Button onClick={onSave} disabled={useAutoPricing}>
             {loading ? <Loader size='tiny' /> : 'Save'}
           </Button>
           {/* <Button
@@ -364,8 +364,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
                             checked={useAutoPricing}
                             onChange={async () => {
                               setUseAutoPricing(!useAutoPricing);
-                              await handleFetchLivePrices();
-                              onSave();
+                              if (useAutoPricing === true) {
+                                await handleFetchLivePrices();
+                                onSave();
+                              }
                             }}
                           />
                         </FormField>
