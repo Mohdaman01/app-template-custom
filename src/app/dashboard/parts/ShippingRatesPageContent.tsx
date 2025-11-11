@@ -87,6 +87,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
         .eq('instance_id', instanceId)
         .maybeSingle();
 
+      console.log('Loaded dashboard rules:', rules);
+
       if (!rules?.currency) {
         const updateCurrency = await supabase
           .from('Dashboard Rules')
