@@ -67,6 +67,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const [useAutoPricing, setUseAutoPricing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState('USD');
   const [lastApiUpdate, setLastApiUpdate] = useState<string | null>(null);
+  const [currencyPrefix, setCurrencyPrefix] = useState('$');
   // const { isSignedIn, loading: authLoading, signOut } = useSupabaseAuth();
   // const [currencyPrefix, setCurrencyPrefix] = useState('$');
 
@@ -77,6 +78,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
     try {
       const accessToken = (await accessTokenPromise)!;
       const appInstance = await getAppInstance({ accessToken });
+      const sitePaymentCurrency = appInstance?.site?.paymentCurrency || 'USD';
+      const siteCurrencySymbol = CURRENCY_SYMBOLS[sitePaymentCurrency] || '$';
+      setCurrencyPrefix(siteCurrencySymbol);
       const instanceId = appInstance?.instance?.instanceId;
       const supabase = createClient();
       const { data: rules, error } = await supabase
@@ -403,6 +407,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     updateStoreItemPricePlatinum={async (newPrice: number) => {
                       setUpdatedPlatinumPriceForMethod(newPrice);
                     }}
+                    prefix={currencyPrefix}
                   />
                 </Cell>
                 {/* <Cell key={2}>

@@ -62,7 +62,7 @@ export async function getShippingAppData(appIdentifier: AppIdentifier): Promise<
       return (await import('@/app/utils/mocks-server')).getTestingShippingAppData();
     }
     const databaseKey = await getDatabaseKey(appIdentifier);
-    console.log('getShippingAppData::key - ', databaseKey);
+    // console.log('getShippingAppData::key - ', databaseKey);
     return defaultAppData;
   } catch (e) {
     console.log('getShippingAppData::error - ', e);
