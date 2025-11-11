@@ -365,7 +365,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                             checked={useAutoPricing}
                             onChange={async () => {
                               setUseAutoPricing(!useAutoPricing);
-                              if (useAutoPricing === true) {
+                              if (!useAutoPricing) {
                                 await handleFetchLivePrices();
                                 console.log('Auto_Price_Status: ', useAutoPricing);
                                 onSave();
