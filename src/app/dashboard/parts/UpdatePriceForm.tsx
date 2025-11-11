@@ -33,6 +33,7 @@ export function UpdatePriceForm({
   updateStoreItemPricePlatinum: (newPrice: number) => void;
   prefix?: string;
 }) {
+  console.log('UpdatePriceForm rendered with prefix: ', prefix);
   // const [checked, setChecked] = useState(false);
   // const uomName =
   //   unitOfMeasure === ShippingUnitOfMeasure.NUM_OF_ITEMS
@@ -67,7 +68,7 @@ export function UpdatePriceForm({
                 <Text>Gold Price</Text>
                 <FormField>
                   <NumberInput
-                    prefix={typeof prefix === 'string' ? prefix : '$'}
+                    prefix={prefix}
                     suffix='per gram'
                     placeholder='Enter Price'
                     type='number'
@@ -86,7 +87,7 @@ export function UpdatePriceForm({
                 <Text>Silver Price</Text>
                 <FormField>
                   <NumberInput
-                    prefix={typeof prefix === 'string' ? prefix : '$'}
+                    prefix={prefix}
                     suffix='per gram'
                     placeholder='Select totalPrice'
                     type='number'
@@ -105,7 +106,7 @@ export function UpdatePriceForm({
                 <Text>Platinum Price</Text>
                 <FormField>
                   <NumberInput
-                    prefix={typeof prefix === 'string' ? prefix : '$'}
+                    prefix={prefix}
                     suffix='per gram'
                     placeholder='Select totalPrice'
                     type='number'
