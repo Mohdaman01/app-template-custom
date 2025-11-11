@@ -108,8 +108,17 @@ export const ShippingRatesPageContent = ({}: {}) => {
       if (rules?.silverPrice) setSilverPrice(rules.silverPrice);
       if (rules?.platinumPrice) setPlatinumPrice(rules.platinumPrice);
       if (rules?.currency) setSelectedCurrency(rules.currency);
-      if (rules?.use_auto_pricing && rules?.use_auto_pricing === true) setUseAutoPricing(true);
-      else setUseAutoPricing(false);
+      if (rules?.use_auto_pricing && rules?.use_auto_pricing === true) {
+        console.log('if triggered for userPriceAuto: ');
+        console.log('usePriceAuto price before setUserAutoOricing: ', useAutoPricing);
+        setUseAutoPricing(true);
+        console.log('usePriceAuto price after setUserAutoOricing: ', useAutoPricing);
+      } else {
+        console.log('else triggered for userPriceAuto: ');
+        console.log('usePriceAuto price before setUserAutoOricing: ', useAutoPricing);
+        setUseAutoPricing(false);
+        console.log('usePriceAuto price after setUserAutoOricing: ', useAutoPricing);
+      }
       if (rules?.last_api_update) setLastApiUpdate(rules.last_api_update);
       if (rules?.currency) {
         setSelectedCurrency(rules.currency);
@@ -365,7 +374,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
                             checked={useAutoPricing}
                             onChange={async () => {
                               setUseAutoPricing(!useAutoPricing);
-                              if (!useAutoPricing) {
+                              console.log('Toggled Auto_Price_Status outside if: ', useAutoPricing);
+                              if (useAutoPricing === true) {
+                                console.log('Toggled Auto_Price_Status inside if: ', useAutoPricing);
                                 await handleFetchLivePrices();
                                 console.log('Auto_Price_Status: ', useAutoPricing);
                                 onSave();
