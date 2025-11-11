@@ -5,6 +5,7 @@ import { createClient, createServiceClient } from '@/app/utils/supabase/server';
 import { createClient as wixClient } from '@wix/sdk/client';
 import { AppStrategy } from '@wix/sdk/auth/wix-app-oauth';
 import { products as Products, productsV3 as ProdcutsV3, catalogVersioning } from '@wix/stores';
+import { site } from '@wix/site-site';
 
 export async function POST(request: NextRequest) {
   console.info('Webhook::install - called');
@@ -27,17 +28,20 @@ export async function POST(request: NextRequest) {
       publicKey: process.env.WIX_APP_JWT_KEY,
       instanceId: instanceId,
     }),
-    modules: { Products, ProdcutsV3, catalogVersioning },
+    modules: { Products, ProdcutsV3, catalogVersioning, site },
   });
 
   console.log('after app client');
 
   const { items } = await appClient.Products.queryProducts().find();
 
-  console.log('items from site: ', items);
+  const currency = await appClient.site.currency();
+  console.log('site currency: ', currency);
+
+  // console.log('items from site: ', items);
 
   const { catalogVersion } = await appClient.catalogVersioning.getCatalogVersion();
-  console.log('storeVersion is: ', catalogVersion);
+  // console.log('storeVersion is: ', catalogVersion);
 
   let version: 'v1' | 'v3';
 
@@ -57,6 +61,7 @@ export async function POST(request: NextRequest) {
     const rule = {
       event_type: eventType,
       instance_id: instanceId ?? null,
+      currency: currency,
     } as any;
 
     const { data: upserted, error } = await supabase
@@ -111,7 +116,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      console.log(`Updated product ${product._id} with response: `, response);
+      // console.log(`Updated product ${product._id} with response: `, response);
 
       // const response = await fetch(`https://www.wixapis.com/stores/${version}/products/${product._id}`, {
       //   method: 'PATCH',
