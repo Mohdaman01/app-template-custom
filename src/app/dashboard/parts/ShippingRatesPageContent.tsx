@@ -108,7 +108,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
       if (rules?.silverPrice) setSilverPrice(rules.silverPrice);
       if (rules?.platinumPrice) setPlatinumPrice(rules.platinumPrice);
       if (rules?.currency) setSelectedCurrency(rules.currency);
-      if (rules?.use_auto_pricing !== undefined) setUseAutoPricing(rules.use_auto_pricing);
+      if (rules?.use_auto_pricing && rules?.use_auto_pricing === true) setUseAutoPricing(true);
+      else setUseAutoPricing(false);
       if (rules?.last_api_update) setLastApiUpdate(rules.last_api_update);
       if (rules?.currency) {
         setSelectedCurrency(rules.currency);
