@@ -76,89 +76,77 @@ export async function POST(request: NextRequest) {
   // For webhook calls, we can use the app secret directly since this is server-to-server
   try {
     if (version !== 'v3') {
-      // for (const product of items) {
-      //   if (!product._id) {
-      //     console.warn('Skipping product without ID');
-      //     continue;
-      //   }
-      //   await appClient.Products.updateProduct(product._id!, {
-      //     ...product,
-      //     seoData: {
-      //       tags: [
-      //         ...(product.seoData?.tags || []),
-      //         {
-      //           meta: {
-      //             metalType: '',
-      //             metalWight: 0,
-      //           },
-      //         },
-      //       ],
-      //     },
-      //   });
-      // }
-      throw new Error(`Unsupported catalog version: ${version}`);
-    }
-    // Update each product with the extended fields using REST API
-    for (const product of items) {
-      if (!product._id) {
-        console.warn('Skipping product without ID');
-        continue;
+      for (const product of items) {
+        if (!product._id) {
+          console.warn('Skipping product without ID');
+          continue;
+        }
+        const res = await appClient.Products.updateProduct(product._id!, {
+          ...product,
+          seoData: {
+            tags: [
+              ...(product.seoData?.tags || []),
+              {
+                type: 'meta',
+                props: {
+                  name: 'MetalType',
+                  content: '',
+                },
+                custom: true,
+                disabled: false,
+              },
+              {
+                type: 'meta',
+                props: {
+                  name: 'metalWeight',
+                  content: '0',
+                },
+                custom: true,
+                disabled: false,
+              },
+            ],
+          },
+        });
+        console.log(`Updated product ${product._id} with response: `, res);
       }
-      const tempProdcut = await appClient.ProdcutsV3.getProduct(product._id);
-      console.log('tempProdcut is: ', tempProdcut);
-      const revision = tempProdcut.revision;
+      // throw new Error(`Unsupported catalog version: ${version}`);
+    } else {
+      // Update each product with the extended fields using REST API
+      for (const product of items) {
+        if (!product._id) {
+          console.warn('Skipping product without ID');
+          continue;
+        }
+        const tempProdcut = await appClient.ProdcutsV3.getProduct(product._id);
+        console.log('tempProdcut is: ', tempProdcut);
+        const revision = tempProdcut.revision;
 
-      // Check if extended fields already exist
-      const existingMetalType =
-        tempProdcut?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType;
-      const existingMetalWeight =
-        tempProdcut?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight;
+        // Check if extended fields already exist
+        const existingMetalType =
+          tempProdcut?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType;
+        const existingMetalWeight =
+          tempProdcut?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight;
 
-      if (existingMetalType !== undefined && existingMetalWeight !== undefined) {
-        console.log(`Product ${product._id} already has extended fields, skipping update`);
-        continue;
-      }
+        if (existingMetalType !== undefined && existingMetalWeight !== undefined) {
+          console.log(`Product ${product._id} already has extended fields, skipping update`);
+          continue;
+        }
 
-      const response = await appClient.ProdcutsV3.updateProduct(product._id, {
-        revision: revision,
-        extendedFields: {
-          namespaces: {
-            // Replace with your app's namespace from the schema plugin
-            '@wixfreaks/test-shipping-example': {
-              MetalType: '',
-              MetalWeight: 0,
+        const response = await appClient.ProdcutsV3.updateProduct(product._id, {
+          revision: revision,
+          extendedFields: {
+            namespaces: {
+              // Replace with your app's namespace from the schema plugin
+              '@wixfreaks/test-shipping-example': {
+                MetalType: '',
+                MetalWeight: 0,
+              },
             },
           },
-        },
-      });
+        });
 
-      // console.log(`Updated product ${product._id} with response: `, response);
-
-      // const response = await fetch(`https://www.wixapis.com/stores/${version}/products/${product._id}`, {
-      //   method: 'PATCH',
-      //   headers: {
-      //     Authorization: `Bearer ${process.env.WIX_APP_SECRET!}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     product: {
-      //       id: product._id,
-      //       revision: revision,
-      //       extendedFields: {
-      //         namespaces: {
-      //           // Replace with your app's namespace from the schema plugin
-      //           '@wixfreaks/test-shipping-example': {
-      //             MetalType: '',
-      //           },
-      //         },
-      //       },
-      //     },
-      //   }),
-      // });
-
-      // if (!response) {
-      //   throw new Error(`Failed to update product ${product._id}: ${await response.text()}`);
-      // }
+        // console.log(`Updated product ${product._id} with response: `, response);
+      }
     }
 
     console.info('Webhook::install - initialized product extended fields');
