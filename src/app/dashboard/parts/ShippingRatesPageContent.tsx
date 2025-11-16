@@ -64,6 +64,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   >([]);
 
   const [loading, setLoading] = useState(false);
+  const [extendedFieldsLoading, setExtendedFieldsLoading] = useState(false);
   const [useAutoPricing, setUseAutoPricing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState('USD');
   const [lastApiUpdate, setLastApiUpdate] = useState<string | null>(null);
@@ -209,6 +210,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         if (silverPrice !== null) payload.silverPrice = silverPrice;
         if (platinumPrice !== null) payload.platinumPrice = platinumPrice;
         if (lastApiUpdate) payload.last_api_update = lastApiUpdate;
+        if (useAutoPricing !== null) payload.use_auto_pricing = useAutoPricing;
 
         const { data: rules, error } = await supabase
           .from('Dashboard Rules')
@@ -220,12 +222,12 @@ export const ShippingRatesPageContent = ({}: {}) => {
         if (error) throw error;
 
         // Bulk update product extended fields
-        if (productUpdates.length > 0) {
-          await bulkUpdateProductExtendedFields({
-            accessToken,
-            updates: productUpdates,
-          });
-        }
+        // if (productUpdates.length > 0) {
+        //   await bulkUpdateProductExtendedFields({
+        //     accessToken,
+        //     updates: productUpdates,
+        //   });
+        // }
 
         // Update store item prices
         await updateStoreItemPrice({
@@ -254,6 +256,28 @@ export const ShippingRatesPageContent = ({}: {}) => {
     useAutoPricing,
     lastApiUpdate,
   ]);
+
+  const saveExtendedFields = useCallback(async () => {
+    setExtendedFieldsLoading(true);
+    (async () => {
+      try {
+        const accessToken = (await accessTokenPromise)!;
+        // Bulk update product extended fields
+        if (productUpdates.length > 0) {
+          await bulkUpdateProductExtendedFields({
+            accessToken,
+            updates: productUpdates,
+          });
+        }
+        showToast({ message: 'Product details updated successfully.', type: 'success' });
+      } catch (e) {
+        console.error('Error updating product details:', e);
+        showToast({ message: 'Failed to update product details.', type: 'error' });
+      } finally {
+        setExtendedFieldsLoading(false);
+      }
+    })();
+  }, [accessTokenPromise, productUpdates, showToast]);
 
   // auth is handled by useSupabaseAuth hook which subscribes to auth state and visibility
 
@@ -478,6 +502,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     title='Set Current Products (Metal type/Weight in grams)'
                     productsToSet={productsToSet}
                     onProductUpdatesChanged={handleProductUpdatesChanged}
+                    saveExtendedFields={saveExtendedFields}
+                    extendedFieldsLoading={extendedFieldsLoading}
                   />
                 </Cell>
               </Layout>

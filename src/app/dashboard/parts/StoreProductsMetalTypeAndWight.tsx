@@ -9,6 +9,8 @@ import {
   Text,
   //   TextButton,
   Dropdown,
+  Button,
+  Loader,
 } from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
 import { testProducts } from '../../../..//dummy';
@@ -23,15 +25,20 @@ interface StoreProductsMetalTypeAndWeightProps {
   title: string;
   productsToSet: any[];
   onProductUpdatesChanged?: (updates: ProductUpdate[]) => void;
+  saveExtendedFields?: () => Promise<void>;
+  extendedFieldsLoading?: boolean;
 }
 
 export function StoreProductsMetalTypeAndWeight({
   title,
   productsToSet,
   onProductUpdatesChanged,
+  saveExtendedFields,
+  extendedFieldsLoading,
 }: StoreProductsMetalTypeAndWeightProps) {
   // Track local state for each product's metal type and weight
   const [productUpdates, setProductUpdates] = useState<Record<string, ProductUpdate>>({});
+  // const [loading, setLoading] = useState(false);
 
   // Metal type options for dropdown
   const metalTypeOptions = [
@@ -90,7 +97,14 @@ export function StoreProductsMetalTypeAndWeight({
 
   return (
     <Card>
-      <Card.Header title={title} />
+      <Card.Header
+        title={title}
+        suffix={
+          <Button onClick={() => saveExtendedFields && saveExtendedFields()}>
+            {extendedFieldsLoading ? <Loader size='tiny' /> : 'Save'}
+          </Button>
+        }
+      />
       <Card.Divider />
       <Card.Content>
         <Box direction='vertical' gap='SP7' scrollBehavior='auto' maxHeight='80vh' overflow='auto'>

@@ -76,6 +76,26 @@ export async function POST(request: NextRequest) {
   // For webhook calls, we can use the app secret directly since this is server-to-server
   try {
     if (version !== 'v3') {
+      // for (const product of items) {
+      //   if (!product._id) {
+      //     console.warn('Skipping product without ID');
+      //     continue;
+      //   }
+      //   await appClient.Products.updateProduct(product._id!, {
+      //     ...product,
+      //     seoData: {
+      //       tags: [
+      //         ...(product.seoData?.tags || []),
+      //         {
+      //           meta: {
+      //             metalType: '',
+      //             metalWight: 0,
+      //           },
+      //         },
+      //       ],
+      //     },
+      //   });
+      // }
       throw new Error(`Unsupported catalog version: ${version}`);
     }
     // Update each product with the extended fields using REST API
@@ -85,6 +105,7 @@ export async function POST(request: NextRequest) {
         continue;
       }
       const tempProdcut = await appClient.ProdcutsV3.getProduct(product._id);
+      console.log('tempProdcut is: ', tempProdcut);
       const revision = tempProdcut.revision;
 
       // Check if extended fields already exist
