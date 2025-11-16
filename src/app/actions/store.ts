@@ -306,27 +306,15 @@ export async function updateProductExtendedFields({
 }
 
 function updateMetaTags(tags: any[], metalType: string, metalWeight: number | string) {
-  return tags.map((tag) => {
+  tags.forEach((tag) => {
     if (tag.type === 'meta' && tag.props?.name === 'MetalType') {
-      return {
-        ...tag,
-        props: {
-          ...tag.props,
-          content: metalType,
-        },
-      };
+      tag.props.content = metalType;
     }
     if (tag.type === 'meta' && tag.props?.name === 'MetalWeight') {
-      return {
-        ...tag,
-        props: {
-          ...tag.props,
-          content: metalWeight,
-        },
-      };
+      tag.props.content = metalWeight;
     }
-    return tag;
   });
+  return tags;
 }
 
 export async function bulkUpdateProductExtendedFields({
@@ -370,7 +358,7 @@ export async function bulkUpdateProductExtendedFields({
           ...product.product,
           seoData: {
             ...product.product.seoData,
-            tags: [],
+            tags: updateMetaTags(product.product.seoData?.tags || [], update.metalType, update.metalWeight),
           },
         };
         const res = await sdk.products.updateProduct(product.product._id!, productUpdatePayload);
