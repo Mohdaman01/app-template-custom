@@ -305,6 +305,30 @@ export async function updateProductExtendedFields({
   }
 }
 
+function updateMetaTags(tags: any[], metalType: string, metalWeight: number) {
+  return tags.map((tag) => {
+    if (tag.type === 'meta' && tag.props?.name === 'MetalType') {
+      return {
+        ...tag,
+        props: {
+          ...tag.props,
+          content: metalType,
+        },
+      };
+    }
+    if (tag.type === 'meta' && tag.props?.name === 'MetalWeight') {
+      return {
+        ...tag,
+        props: {
+          ...tag.props,
+          content: metalWeight,
+        },
+      };
+    }
+    return tag;
+  });
+}
+
 export async function bulkUpdateProductExtendedFields({
   accessToken,
   updates,
@@ -321,13 +345,44 @@ export async function bulkUpdateProductExtendedFields({
   try {
     const sdk = createSdk(accessToken);
     const version = await sdk.catalogVersioning.getCatalogVersion();
+    const productIds = updates.map((u) => u.productId);
 
     if (version.catalogVersion !== 'V3_CATALOG') {
-      throw new Error('Extended fields are only supported in V3_CATALOG');
+      const products = await Promise.all(
+        productIds.map(async (productId) => {
+          try {
+            return await sdk.products.getProduct(productId);
+          } catch (error) {
+            console.error(`Failed to fetch product ${productId}:`, error);
+            return null;
+          }
+        }),
+      );
+
+      // Filter out null results and prepare updates
+      const validProducts = products.filter(Boolean);
+
+      const updatedProducts = validProducts.map(async (product, index) => {
+        const update = updates.find((u) => u.productId === product?.product?._id);
+        if (!update || !product?.product?._id) return null;
+
+        const productUpdatePayload = {
+          ...product.product,
+          seoData: {
+            ...product.product.seoData,
+            tags: updateMetaTags(product.product.seoData?.tags || [], update.metalType, update.metalWeight),
+          },
+        };
+        const res = await sdk.products.updateProduct(product.product._id!, productUpdatePayload);
+        return res;
+      });
+
+      console.log('Prepared products for bulk SEO tags update:', updatedProducts);
+      return;
+      // throw new Error('Extended fields are only supported in V3_CATALOG');
     }
 
     // Fetch all products to get their revisions
-    const productIds = updates.map((u) => u.productId);
     const products = await Promise.all(
       productIds.map(async (productId) => {
         try {
