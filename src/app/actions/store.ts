@@ -321,7 +321,7 @@ function updateMetaTags(tags: any[], metalType: string, metalWeight: number) {
         ...tag,
         props: {
           ...tag.props,
-          content: metalWeight,
+          content: String(metalWeight),
         },
       };
     }
