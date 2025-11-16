@@ -81,6 +81,13 @@ export async function POST(request: NextRequest) {
           console.warn('Skipping product without ID');
           continue;
         }
+        const existingMetalType = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType');
+        const existingMetalWeight = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalWeight' || tag.props?.name === 'metalWeight');
+        
+        if (existingMetalType && existingMetalWeight) {
+          console.log(`Product ${product._id} already has SEO tags, skipping update`);
+          continue;
+        }
         const res = await appClient.Products.updateProduct(product._id!, {
           ...product,
           seoData: {
@@ -98,7 +105,7 @@ export async function POST(request: NextRequest) {
               {
                 type: 'meta',
                 props: {
-                  name: 'metalWeight',
+                  name: 'MetalWeight',
                   content: '0',
                 },
                 custom: true,

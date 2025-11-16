@@ -55,8 +55,15 @@ export function StoreProductsMetalTypeAndWeight({
   useEffect(() => {
     const initialUpdates: Record<string, ProductUpdate> = {};
     displayProducts.forEach((product) => {
-      const metalType = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
-      const metalWeight = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight || 0;
+      let metalType, metalWeight;
+      if (product?.extendedFields) {
+        metalType = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
+        metalWeight = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight || 0;
+      } else {
+        metalType = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType')?.props?.content || '';
+        metalWeight =
+          parseFloat(product.seoData?.tags?.find((tag: any) => tag.props?.name === 'metalWeight')?.props?.content) || 0;
+      }
 
       initialUpdates[product._id] = {
         productId: product._id,
