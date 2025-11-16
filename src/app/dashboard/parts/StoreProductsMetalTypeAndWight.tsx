@@ -62,7 +62,7 @@ export function StoreProductsMetalTypeAndWeight({
       } else {
         metalType = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType')?.props?.content || '';
         metalWeight =
-          parseFloat(product.seoData?.tags?.find((tag: any) => tag.props?.name === 'metalWeight')?.props?.content) || 0;
+          parseFloat(product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalWeight')?.props?.content) || 0;
       }
 
       initialUpdates[product._id] = {
