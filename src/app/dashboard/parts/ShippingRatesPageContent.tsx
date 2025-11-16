@@ -60,7 +60,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const [platinumPrice, setPlatinumPrice] = useState<number | null>(null);
   const [productsToSet, setProductsToSet] = useState<any[]>([]);
   const [productUpdates, setProductUpdates] = useState<
-    Array<{ productId: string; metalType: string; metalWeight: number }>
+    Array<{ productId: string; metalType: string; metalWeight: number | string }>
   >([]);
 
   const [loading, setLoading] = useState(false);
@@ -291,7 +291,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const setUpdatedPlatinumPriceForMethod = useCallback((newPrice: number) => setPlatinumPrice(newPrice), []);
 
   const handleProductUpdatesChanged = useCallback(
-    (updates: Array<{ productId: string; metalType: string; metalWeight: number }>) => {
+    (updates: Array<{ productId: string; metalType: string; metalWeight: number | string }>) => {
       setProductUpdates(updates);
     },
     [],

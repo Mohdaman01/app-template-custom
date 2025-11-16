@@ -305,7 +305,7 @@ export async function updateProductExtendedFields({
   }
 }
 
-function updateMetaTags(tags: any[], metalType: string, metalWeight: number) {
+function updateMetaTags(tags: any[], metalType: string, metalWeight: number | string) {
   return tags.map((tag) => {
     if (tag.type === 'meta' && tag.props?.name === 'MetalType') {
       return {
@@ -321,7 +321,7 @@ function updateMetaTags(tags: any[], metalType: string, metalWeight: number) {
         ...tag,
         props: {
           ...tag.props,
-          content: String(metalWeight),
+          content: metalWeight,
         },
       };
     }
@@ -337,7 +337,7 @@ export async function bulkUpdateProductExtendedFields({
   updates: Array<{
     productId: string;
     metalType: string;
-    metalWeight: number;
+    metalWeight: number | string;
   }>;
 }) {
   console.log('Bulk updating product extended fields for', updates.length, 'products');

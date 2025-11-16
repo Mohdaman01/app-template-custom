@@ -18,7 +18,7 @@ import { testProducts } from '../../../..//dummy';
 interface ProductUpdate {
   productId: string;
   metalType: string;
-  metalWeight: number;
+  metalWeight: number | string;
 }
 
 interface StoreProductsMetalTypeAndWeightProps {
@@ -92,7 +92,7 @@ export function StoreProductsMetalTypeAndWeight({
     }));
   };
 
-  const handleMetalWeightChange = (productId: string, metalWeight: number) => {
+  const handleMetalWeightChange = (productId: string, metalWeight: number | string) => {
     setProductUpdates((prev) => ({
       ...prev,
       [productId]: {
