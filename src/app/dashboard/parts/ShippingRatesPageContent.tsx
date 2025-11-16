@@ -148,6 +148,22 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   const handleFetchLivePrices = useCallback(async () => {
     // Pass useDatabase=true when auto-pricing is enabled
+    console.log('Selected Currency: ', selectedCurrency);
+    if (!useAutoPricing) {
+      const accessToken = (await accessTokenPromise)!;
+      const appInstance = await getAppInstance({ accessToken });
+      const instanceId = appInstance?.instance?.instanceId;
+      const supabase = createClient();
+
+      await supabase
+        .from('Dashboard Rules')
+        .update({
+          use_auto_pricing: useAutoPricing,
+        })
+        .eq('instance_id', instanceId);
+      showToast({ message: 'Automatic Pricing is disabled.', type: 'success' });
+      return;
+    }
     const prices = await fetchPrices(selectedCurrency, useAutoPricing);
     if (prices) {
       setGoldPrice(prices.goldPrice);
@@ -181,7 +197,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
           goldPrice: prices.goldPrice,
           silverPrice: prices.silverPrice,
           platinumPrice: prices.platinumPrice,
-          currency: selectedCurrency,
+          // currency: selectedCurrency,
           use_auto_pricing: useAutoPricing,
           last_api_update: new Date().toISOString(),
         })
@@ -399,10 +415,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
                             onChange={async () => {
                               setUseAutoPricing(!useAutoPricing);
                               console.log('Toggled Auto_Price_Status outside if: ', useAutoPricing);
+                              await handleFetchLivePrices();
                               if (useAutoPricing === true) {
                                 console.log('Toggled Auto_Price_Status inside if: ', useAutoPricing);
-                                await handleFetchLivePrices();
-                                console.log('Auto_Price_Status: ', useAutoPricing);
                                 onSave();
                               }
                             }}
