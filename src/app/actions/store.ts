@@ -370,14 +370,14 @@ export async function bulkUpdateProductExtendedFields({
           ...product.product,
           seoData: {
             ...product.product.seoData,
-            tags: updateMetaTags(product.product.seoData?.tags || [], update.metalType, update.metalWeight),
+            tags: [],
           },
         };
         const res = await sdk.products.updateProduct(product.product._id!, productUpdatePayload);
         return res;
       });
 
-      console.log('Prepared products for bulk SEO tags update:', updatedProducts);
+      console.log('products for bulk SEO tags updated');
       return;
       // throw new Error('Extended fields are only supported in V3_CATALOG');
     }
