@@ -74,10 +74,11 @@ export async function updateStoreItemPrice({
           // Type assertion to access extendedFields (V1 catalog may have extended fields as any)
           const productWithExtendedFields = product as any;
           const metalType =
-            productWithExtendedFields.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
+            productWithExtendedFields.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType').props
+              ?.content || '';
           const metalWeight =
-            productWithExtendedFields.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight ||
-            0;
+            productWithExtendedFields.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalWeight')?.props
+              ?.content || 0;
 
           // Skip products without a valid metal type
           const normalizedMetalType = metalType?.toUpperCase();

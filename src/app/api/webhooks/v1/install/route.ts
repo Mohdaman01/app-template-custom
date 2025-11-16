@@ -82,9 +82,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
         const existingMetalType = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType');
-        const existingMetalWeight = product.seoData?.tags?.find(
-          (tag: any) => tag.props?.name === 'MetalWeight' || tag.props?.name === 'metalWeight',
-        );
+        const existingMetalWeight = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalWeight');
 
         if (existingMetalType && existingMetalWeight) {
           console.log(`Product ${product._id} already has SEO tags, skipping update`);
@@ -108,7 +106,7 @@ export async function POST(request: NextRequest) {
                 type: 'meta',
                 props: {
                   name: 'MetalWeight',
-                  content: '0',
+                  content: 0,
                 },
                 custom: true,
                 disabled: false,
