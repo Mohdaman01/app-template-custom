@@ -408,16 +408,17 @@ export const ShippingRatesPageContent = ({}: {}) => {
                       <Box direction='vertical' gap='SP4'>
                         <FormField
                           label='Enable Automatic Pricing'
-                          infoContent='When enabled, you can fetch live metal prices from an external API. Manual entry is still available.'
+                          infoContent='When enabled, you can fetch live metal prices.'
                         >
                           <ToggleSwitch
                             checked={useAutoPricing}
                             onChange={async () => {
-                              setUseAutoPricing(!useAutoPricing);
-                              console.log('Toggled Auto_Price_Status outside if: ', useAutoPricing);
+                              const newValue = !useAutoPricing;
+                              setUseAutoPricing(newValue);
+                              console.log('Toggled newValue outside if: ', newValue);
                               await handleFetchLivePrices();
-                              if (useAutoPricing === true) {
-                                console.log('Toggled Auto_Price_Status inside if: ', useAutoPricing);
+                              if (newValue) {
+                                console.log('Toggled newValue inside if: ', newValue);
                                 onSave();
                               }
                             }}

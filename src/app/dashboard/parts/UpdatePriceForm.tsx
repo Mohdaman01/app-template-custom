@@ -33,7 +33,7 @@ export function UpdatePriceForm({
   updateStoreItemPricePlatinum: (newPrice: number) => void;
   prefix?: string;
 }) {
-  console.log('UpdatePriceForm rendered with prefix: ', prefix);
+  // console.log('UpdatePriceForm rendered with prefix: ', prefix);
   // const [checked, setChecked] = useState(false);
   // const uomName =
   //   unitOfMeasure === ShippingUnitOfMeasure.NUM_OF_ITEMS
