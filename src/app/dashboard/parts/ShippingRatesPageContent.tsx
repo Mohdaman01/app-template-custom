@@ -80,6 +80,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       const accessToken = (await accessTokenPromise)!;
       const appInstance = await getAppInstance({ accessToken });
       const sitePaymentCurrency = appInstance?.site?.paymentCurrency || 'USD';
+      console.log('Site payment currency: ', sitePaymentCurrency, ' and Symbol', CURRENCY_SYMBOLS[sitePaymentCurrency]);
       const instanceId = appInstance?.instance?.instanceId;
       const supabase = createClient();
       const { data: rules, error } = await supabase
@@ -109,7 +110,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       if (rules?.silverPrice) setSilverPrice(rules.silverPrice);
       if (rules?.platinumPrice) setPlatinumPrice(rules.platinumPrice);
       if (rules?.currency) setSelectedCurrency(rules.currency);
-      if (rules?.use_auto_pricing && rules?.use_auto_pricing === true) {
+      if (rules?.use_auto_pricing) {
         console.log('if triggered for userPriceAuto: ');
         console.log('usePriceAuto price before setUserAutoOricing: ', useAutoPricing);
         setUseAutoPricing(true);
@@ -149,9 +150,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const handleFetchLivePrices = async (autoPricingEnabled: boolean) => {
     // Pass useDatabase=true when auto-pricing is enabled
     console.log('Selected Currency: ', selectedCurrency);
-    console.log('autoPriceingEnabled outside of if : ', autoPricingEnabled);
+
     if (!autoPricingEnabled) {
       console.log('autoPriceingEnabled inside of if : ', autoPricingEnabled);
+
       const accessToken = (await accessTokenPromise)!;
       const appInstance = await getAppInstance({ accessToken });
       const instanceId = appInstance?.instance?.instanceId;
@@ -163,9 +165,13 @@ export const ShippingRatesPageContent = ({}: {}) => {
           use_auto_pricing: false,
         })
         .eq('instance_id', instanceId);
+
       showToast({ message: 'Automatic Pricing is disabled.', type: 'success' });
       return;
     }
+
+    console.log('autoPriceingEnabled outside of if : ', autoPricingEnabled);
+
     const prices = await fetchPrices(selectedCurrency, useAutoPricing);
     if (prices) {
       setGoldPrice(prices.goldPrice);
@@ -193,7 +199,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       const instanceId = appInstance?.instance?.instanceId;
       const supabase = createClient();
 
-      await supabase
+      const res = await supabase
         .from('Dashboard Rules')
         .update({
           goldPrice: prices.goldPrice,
@@ -205,7 +211,16 @@ export const ShippingRatesPageContent = ({}: {}) => {
         })
         .eq('instance_id', instanceId);
 
-      onSave();
+      console.log('Updated Dashboard Rules with live prices:', res);
+
+      const result = await updateStoreItemPrice({
+        accessToken,
+        goldPrice: prices.goldPrice,
+        silverPrice: prices.silverPrice,
+        platinumPrice: prices.platinumPrice,
+      });
+
+      console.log('Updated store item prices with live prices:', result);
     } else if (pricesError) {
       showToast({
         message: `Failed to fetch live prices: ${pricesError}`,
@@ -229,8 +244,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         if (goldPrice !== null) payload.goldPrice = goldPrice;
         if (silverPrice !== null) payload.silverPrice = silverPrice;
         if (platinumPrice !== null) payload.platinumPrice = platinumPrice;
-        if (lastApiUpdate) payload.last_api_update = lastApiUpdate;
-        if (useAutoPricing !== null) payload.use_auto_pricing = useAutoPricing;
+        // if (lastApiUpdate) payload.last_api_update = lastApiUpdate;
 
         const { data: rules, error } = await supabase
           .from('Dashboard Rules')
@@ -240,14 +254,6 @@ export const ShippingRatesPageContent = ({}: {}) => {
           .maybeSingle();
 
         if (error) throw error;
-
-        // Bulk update product extended fields
-        // if (productUpdates.length > 0) {
-        //   await bulkUpdateProductExtendedFields({
-        //     accessToken,
-        //     updates: productUpdates,
-        //   });
-        // }
 
         // Update store item prices
         await updateStoreItemPrice({
