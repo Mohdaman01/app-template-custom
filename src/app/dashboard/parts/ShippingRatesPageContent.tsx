@@ -146,69 +146,74 @@ export const ShippingRatesPageContent = ({}: {}) => {
     void loadDashboardData();
   }, [loadDashboardData]);
 
-  const handleFetchLivePrices = useCallback(async () => {
-    // Pass useDatabase=true when auto-pricing is enabled
-    console.log('Selected Currency: ', selectedCurrency);
-    if (!useAutoPricing) {
-      const accessToken = (await accessTokenPromise)!;
-      const appInstance = await getAppInstance({ accessToken });
-      const instanceId = appInstance?.instance?.instanceId;
-      const supabase = createClient();
+  const handleFetchLivePrices = useCallback(
+    async (autoPricingEnabled: boolean) => {
+      // Pass useDatabase=true when auto-pricing is enabled
+      console.log('Selected Currency: ', selectedCurrency);
+      if (!autoPricingEnabled) {
+        const accessToken = (await accessTokenPromise)!;
+        const appInstance = await getAppInstance({ accessToken });
+        const instanceId = appInstance?.instance?.instanceId;
+        const supabase = createClient();
 
-      await supabase
-        .from('Dashboard Rules')
-        .update({
-          use_auto_pricing: useAutoPricing,
-        })
-        .eq('instance_id', instanceId);
-      showToast({ message: 'Automatic Pricing is disabled.', type: 'success' });
-      return;
-    }
-    const prices = await fetchPrices(selectedCurrency, useAutoPricing);
-    if (prices) {
-      setGoldPrice(prices.goldPrice);
-      setSilverPrice(prices.silverPrice);
-      setPlatinumPrice(prices.platinumPrice);
-      setLastApiUpdate(new Date().toISOString());
-
-      let message = '';
-      if (prices.fromDatabase) {
-        message = `Prices loaded from database (${prices.currency}). Last updated ${prices.ageHours} hours ago. Next automatic update in ${prices.nextUpdateIn}.`;
-      } else if (prices.fromCache) {
-        message = `Prices loaded from cache (${prices.currency}). Next API call available after ${new Date(prices.expiresAt!).toLocaleTimeString()}`;
-      } else {
-        message = `Fresh prices fetched from API (${prices.currency}). Valid for 1 hour.`;
+        await supabase
+          .from('Dashboard Rules')
+          .update({
+            use_auto_pricing: autoPricingEnabled,
+          })
+          .eq('instance_id', instanceId);
+        showToast({ message: 'Automatic Pricing is disabled.', type: 'success' });
+        return;
       }
+      const prices = await fetchPrices(selectedCurrency, useAutoPricing);
+      if (prices) {
+        setGoldPrice(prices.goldPrice);
+        setSilverPrice(prices.silverPrice);
+        setPlatinumPrice(prices.platinumPrice);
+        setLastApiUpdate(new Date().toISOString());
 
-      showToast({
-        message,
-        type: 'success',
-      });
+        let message = '';
+        if (prices.fromDatabase) {
+          message = `Prices loaded from database (${prices.currency}). Last updated ${prices.ageHours} hours ago. Next automatic update in ${prices.nextUpdateIn}.`;
+        } else if (prices.fromCache) {
+          message = `Prices loaded from cache (${prices.currency}). Next API call available after ${new Date(prices.expiresAt!).toLocaleTimeString()}`;
+        } else {
+          message = `Fresh prices fetched from API (${prices.currency}). Valid for 1 hour.`;
+        }
 
-      // Save to Dashboard Rules
-      const accessToken = (await accessTokenPromise)!;
-      const appInstance = await getAppInstance({ accessToken });
-      const instanceId = appInstance?.instance?.instanceId;
-      const supabase = createClient();
+        showToast({
+          message,
+          type: 'success',
+        });
 
-      await supabase
-        .from('Dashboard Rules')
-        .update({
-          goldPrice: prices.goldPrice,
-          silverPrice: prices.silverPrice,
-          platinumPrice: prices.platinumPrice,
-          // currency: selectedCurrency,
-          use_auto_pricing: useAutoPricing,
-          last_api_update: new Date().toISOString(),
-        })
-        .eq('instance_id', instanceId);
-    } else if (pricesError) {
-      showToast({
-        message: `Failed to fetch live prices: ${pricesError}`,
-        type: 'error',
-      });
-    }
-  }, [fetchPrices, selectedCurrency, useAutoPricing, showToast, pricesError, accessTokenPromise]);
+        // Save to Dashboard Rules
+        const accessToken = (await accessTokenPromise)!;
+        const appInstance = await getAppInstance({ accessToken });
+        const instanceId = appInstance?.instance?.instanceId;
+        const supabase = createClient();
+
+        await supabase
+          .from('Dashboard Rules')
+          .update({
+            goldPrice: prices.goldPrice,
+            silverPrice: prices.silverPrice,
+            platinumPrice: prices.platinumPrice,
+            // currency: selectedCurrency,
+            use_auto_pricing: autoPricingEnabled,
+            last_api_update: new Date().toISOString(),
+          })
+          .eq('instance_id', instanceId);
+
+        onSave();
+      } else if (pricesError) {
+        showToast({
+          message: `Failed to fetch live prices: ${pricesError}`,
+          type: 'error',
+        });
+      }
+    },
+    [fetchPrices, selectedCurrency, useAutoPricing, showToast, pricesError, accessTokenPromise],
+  );
 
   const onSave = useCallback(() => {
     setLoading(true);
@@ -416,11 +421,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                               const newValue = !useAutoPricing;
                               setUseAutoPricing(newValue);
                               console.log('Toggled newValue outside if: ', newValue);
-                              await handleFetchLivePrices();
-                              if (newValue) {
-                                console.log('Toggled newValue inside if: ', newValue);
-                                onSave();
-                              }
+                              await handleFetchLivePrices(newValue);
                             }}
                           />
                         </FormField>
