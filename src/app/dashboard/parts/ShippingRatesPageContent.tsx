@@ -159,7 +159,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         await supabase
           .from('Dashboard Rules')
           .update({
-            use_auto_pricing: autoPricingEnabled,
+            use_auto_pricing: false,
           })
           .eq('instance_id', instanceId);
         showToast({ message: 'Automatic Pricing is disabled.', type: 'success' });
@@ -199,7 +199,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
             silverPrice: prices.silverPrice,
             platinumPrice: prices.platinumPrice,
             // currency: selectedCurrency,
-            use_auto_pricing: autoPricingEnabled,
+            use_auto_pricing: true,
             last_api_update: new Date().toISOString(),
           })
           .eq('instance_id', instanceId);
