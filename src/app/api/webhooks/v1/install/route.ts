@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
 
   console.log('after app client');
 
-  const { items } = await appClient.Products.queryProducts().find();
+  const items = await getAllProducts(appClient);
 
-  // console.log('items from site: ', items);
+  console.log('items from site: ', items);
 
   const { catalogVersion } = await appClient.catalogVersioning.getCatalogVersion();
   // console.log('storeVersion is: ', catalogVersion);
@@ -78,14 +78,14 @@ export async function POST(request: NextRequest) {
     if (version !== 'v3') {
       for (const product of items) {
         if (!product._id) {
-          console.warn('Skipping product without ID');
+          // console.warn('Skipping product without ID');
           continue;
         }
         const existingMetalType = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType');
         const existingMetalWeight = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalWeight');
 
         if (existingMetalType && existingMetalWeight) {
-          console.log(`Product ${product._id} already has SEO tags, skipping update`);
+          // console.log(`Product ${product._id} already has SEO tags, skipping update`);
           continue;
         }
         const res = await appClient.Products.updateProduct(product._id!, {
@@ -121,11 +121,11 @@ export async function POST(request: NextRequest) {
       // Update each product with the extended fields using REST API
       for (const product of items) {
         if (!product._id) {
-          console.warn('Skipping product without ID');
+          // console.warn('Skipping product without ID');
           continue;
         }
         const tempProdcut = await appClient.ProdcutsV3.getProduct(product._id);
-        console.log('tempProdcut is: ', tempProdcut);
+        // console.log('tempProdcut is: ', tempProdcut);
         const revision = tempProdcut.revision;
 
         // Check if extended fields already exist
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
           tempProdcut?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight;
 
         if (existingMetalType !== undefined && existingMetalWeight !== undefined) {
-          console.log(`Product ${product._id} already has extended fields, skipping update`);
+          // console.log(`Product ${product._id} already has extended fields, skipping update`);
           continue;
         }
 
@@ -162,4 +162,18 @@ export async function POST(request: NextRequest) {
     console.error('Webhook::install - failed to initialize product extended fields', productsError);
     return new Response(JSON.stringify({ ok: false, error: String(productsError) }), { status: 500 });
   }
+}
+
+async function getAllProducts(myClient: any) {
+  let allProducts: any[] = [];
+  let queryResult = await myClient.ProdcutsV3.queryProducts().find();
+
+  allProducts = allProducts.concat(queryResult.items);
+
+  while (queryResult.hasNext()) {
+    queryResult = await queryResult.next(); // Fetch the next page
+    allProducts = allProducts.concat(queryResult.items);
+  }
+
+  return allProducts;
 }

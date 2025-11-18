@@ -2,24 +2,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServiceClient, createClient } from '@/app/utils/supabase/server';
+import { createClient as wixClient } from '@wix/sdk/client';
+import { AppStrategy } from '@wix/sdk';
+import { products as Products, productsV3 as ProdcutsV3, catalogVersioning } from '@wix/stores';
 
-/**
- * Background job to fetch and store metal prices every 6 hours.
- * This route should be called by a cron service (e.g., Vercel Cron, GitHub Actions, or external cron-job.org).
- *
- * Set up cron to call: POST /api/cron/update-metal-prices
- * Recommended schedule: "0 *\/6 * * *" (every 6 hours)
- *
- * For Vercel Cron, add to vercel.json:
- * {
- *   "crons": [{
- *     "path": "/api/cron/update-metal-prices",
- *     "schedule": "0 * 6 * * *"
- *   }]
- * }
- *
- * Security: Protect this endpoint with a secret token in production
- */
+async function getAllProducts(myClient: any) {
+  let allProducts: any[] = [];
+  let queryResult = await myClient.ProdcutsV3.queryProducts().find();
+
+  allProducts = allProducts.concat(queryResult.items);
+
+  while (queryResult.hasNext()) {
+    queryResult = await queryResult.next();
+    allProducts = allProducts.concat(queryResult.items);
+  }
+
+  return allProducts;
+}
+
+const calculatePrice = (
+  metalType: string,
+  metalWeight: number,
+  goldPrice: number,
+  silverPrice: number,
+  platinumPrice: number,
+): number => {
+  const normalizedMetalType = metalType?.toUpperCase();
+
+  if (normalizedMetalType === 'GOLD') {
+    return goldPrice * metalWeight;
+  } else if (normalizedMetalType === 'SILVER') {
+    return silverPrice * metalWeight;
+  } else if (normalizedMetalType === 'PLATINUM') {
+    return platinumPrice * metalWeight;
+  }
+
+  return 0;
+};
+
 export async function POST(request: NextRequest) {
   try {
     // Optional: Verify cron secret to prevent unauthorized calls
@@ -38,7 +58,6 @@ export async function POST(request: NextRequest) {
 
     console.log('[CRON] Starting metal prices update job');
 
-    // Make a single API call with base currency (INR or USD)
     const baseCurrency = 'INR';
     console.log(`[CRON] Fetching prices in ${baseCurrency} with all currency rates`);
 
@@ -56,7 +75,6 @@ export async function POST(request: NextRequest) {
       throw new Error('API request failed');
     }
 
-    // Extract base metal prices and currency rates
     const baseGoldPrice = data.metals.gold;
     const baseSilverPrice = data.metals.silver;
     const basePlatinumPrice = data.metals.platinum;
@@ -64,22 +82,17 @@ export async function POST(request: NextRequest) {
     const apiTimestamp = data.timestamps.metal;
     const fetchedAt = new Date().toISOString();
 
-    // Supported currencies to store
     const currencies = ['USD', 'EUR', 'GBP', 'INR', 'AUD', 'CAD', 'JPY'];
     const cookieStore = await cookies();
     const supabase = createServiceClient ? createServiceClient(cookieStore) : createClient(cookieStore);
 
-    // Calculate prices for each currency using the conversion rates
     const results = await Promise.allSettled(
       currencies.map(async (currency) => {
         try {
           console.log(`[CRON] Calculating prices for ${currency}`);
 
-          // Get the conversion rate for this currency
-          // If base is INR and we want USD, we divide by the rate (INR to USD)
           const conversionRate = currency === baseCurrency ? 1 : currencyRates[currency] || 1;
 
-          // Calculate prices in target currency
           const goldPrice = Number((baseGoldPrice / conversionRate).toFixed(2));
           const silverPrice = Number((baseSilverPrice / conversionRate).toFixed(2));
           const platinumPrice = Number((basePlatinumPrice / conversionRate).toFixed(2));
@@ -93,7 +106,6 @@ export async function POST(request: NextRequest) {
             fetched_at: fetchedAt,
           };
 
-          // Upsert into metal_prices table
           const { error: upsertError } = await supabase
             .from('metal_prices')
             .upsert(priceRecord, { onConflict: 'currency' });
@@ -127,6 +139,208 @@ export async function POST(request: NextRequest) {
       }),
     );
 
+    // Updating product prices for pro users with auto pricing enabled
+    try {
+      const { data: proUsers, error: err } = await supabase
+        .from('Dashboard Rules')
+        .select('*')
+        .eq('pro_user', true)
+        .eq('use_auto_pricing', true);
+
+      console.log('Pro users with auto pricing enabled:', proUsers);
+
+      for (const user of proUsers || []) {
+        const instanceId = user.instance_id;
+        const tempAppClient = wixClient({
+          auth: AppStrategy({
+            appId: process.env.WIX_APP_ID!,
+            appSecret: process.env.WIX_APP_SECRET!,
+            publicKey: process.env.WIX_APP_JWT_KEY,
+            instanceId: instanceId,
+          }),
+          modules: { Products, ProdcutsV3, catalogVersioning },
+        });
+
+        const products = await getAllProducts(tempAppClient);
+        const { catalogVersion } = await tempAppClient.catalogVersioning.getCatalogVersion();
+
+        if (catalogVersion === 'V1_CATALOG') {
+          const productsToUpdate = products
+            .map((product) => {
+              const productWithExtendedFields = product as any;
+              const metalType =
+                productWithExtendedFields.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType').props
+                  ?.content || '';
+              const metalWeight =
+                productWithExtendedFields.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalWeight')?.props
+                  ?.content || 0;
+
+              const normalizedMetalType = metalType?.toUpperCase();
+              if (!normalizedMetalType || !['GOLD', 'SILVER', 'PLATINUM'].includes(normalizedMetalType)) {
+                return null;
+              }
+
+              const newPrice = calculatePrice(
+                metalType,
+                metalWeight,
+                user.goldPrice,
+                user.silverPrice,
+                user.platinumPrice,
+              );
+
+              return {
+                ...product,
+                priceData: {
+                  ...product.priceData,
+                  price: newPrice,
+                },
+                lastUpdated: new Date(),
+              };
+            })
+            .filter((product): product is NonNullable<typeof product> => product !== null);
+
+          console.log(`Updating ${productsToUpdate.length} out of ${products.length} V1 products with valid MetalType`);
+
+          await Promise.all(
+            productsToUpdate.map((product) =>
+              tempAppClient.Products.updateProduct(product._id!, {
+                priceData: product.priceData,
+              }),
+            ),
+          );
+
+          // Changed: Don't return here, continue to next user
+          console.log(`Updated ${productsToUpdate.length} V1 products for user ${instanceId}`);
+        } else if (catalogVersion === 'V3_CATALOG') {
+          const items = await getAllProducts(tempAppClient);
+          const productIds = items.map((item) => item._id).filter(Boolean) as string[];
+
+          console.log('Fetched V3 product IDs:', productIds.length);
+
+          const fullProducts = await Promise.all(
+            productIds.map(async (productId) => {
+              try {
+                const productData = await tempAppClient.ProdcutsV3.getProduct(productId, {
+                  fields: ['VARIANT_OPTION_CHOICE_NAMES'],
+                });
+                return productData;
+              } catch (error) {
+                console.error(`Failed to fetch product ${productId}:`, error);
+                return null;
+              }
+            }),
+          );
+
+          const validProducts = fullProducts.filter(Boolean);
+          console.log(
+            'No of Fetched full V3 products:',
+            validProducts.length,
+            'and product structure',
+            validProducts[0],
+          );
+
+          const productsToUpdate = validProducts
+            .map((product) => {
+              const metalType =
+                product?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
+              const metalWeight =
+                product?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight || 0;
+
+              const normalizedMetalType = (metalType as string)?.toUpperCase();
+              if (!normalizedMetalType || !['GOLD', 'SILVER', 'PLATINUM'].includes(normalizedMetalType)) {
+                return null;
+              }
+
+              const newPrice = calculatePrice(
+                metalType as string,
+                metalWeight as number,
+                user.goldPrice,
+                user.silverPrice,
+                user.platinumPrice,
+              );
+
+              const variants = product?.variantsInfo?.variants || [];
+
+              const updatedVariants = variants.map((variant) => {
+                return {
+                  _id: variant._id,
+                  choices: variant.choices?.map((choice) => ({
+                    optionChoiceIds: {
+                      optionId: choice.optionChoiceIds?.optionId,
+                      choiceId: choice.optionChoiceIds?.choiceId,
+                    },
+                    optionChoiceNames: {
+                      optionName: choice.optionChoiceNames?.optionName,
+                      choiceName: choice.optionChoiceNames?.choiceName,
+                      renderType: choice.optionChoiceNames?.renderType,
+                    },
+                  })),
+                  price: {
+                    actualPrice: {
+                      amount: newPrice.toFixed(2).toString(),
+                    },
+                  },
+                  ...(variant.sku && { sku: variant.sku }),
+                  ...(variant.barcode && { barcode: variant.barcode }),
+                  ...(variant.visible !== undefined && { visible: variant.visible }),
+                };
+              });
+
+              return {
+                product: {
+                  _id: product?._id,
+                  revision: product?.revision,
+                  options:
+                    product?.options?.map((option) => ({
+                      _id: option._id,
+                      name: option.name,
+                      optionRenderType: option.optionRenderType,
+                      choicesSettings: {
+                        choices: option.choicesSettings?.choices?.map((choice) => ({
+                          choiceId: choice.choiceId,
+                          name: choice.name,
+                          choiceType: choice.choiceType,
+                          ...(choice.colorCode && { colorCode: choice.colorCode }),
+                          ...(choice.linkedMedia && { linkedMedia: choice.linkedMedia }),
+                        })),
+                      },
+                    })) || [],
+                  variantsInfo: {
+                    variants: updatedVariants,
+                  },
+                },
+              };
+            })
+            .filter((item): item is NonNullable<typeof item> => item !== null);
+
+          console.log(
+            `Prepared ${productsToUpdate.length} out of ${validProducts.length} V3 products for bulk update with valid MetalType`,
+          );
+
+          if (productsToUpdate.length === 0) {
+            console.log('No V3 products with valid MetalType to update');
+            // Changed: Don't return here, continue to next user
+            continue;
+          }
+
+          const batchSize = 100;
+          const batchResults = [];
+
+          for (let i = 0; i < productsToUpdate.length; i += batchSize) {
+            const batch = productsToUpdate.slice(i, i + batchSize);
+            const batchResult = await tempAppClient.ProdcutsV3.bulkUpdateProductsWithInventory(batch, {});
+            batchResults.push(...(batchResult?.productResults?.results || []));
+          }
+
+          const updatedProducts = batchResults.filter((result) => result.item).map((result) => result.item);
+
+          console.log('Successfully updated V3 products:', updatedProducts.length);
+        }
+      }
+    } catch (err) {
+      console.error('Error updating product prices for users:', err);
+    }
+
     const successful = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
     const failed = results.length - successful;
 
@@ -151,8 +365,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Allow GET for manual testing (remove in production or add auth)
 export async function GET(request: NextRequest) {
-  // Forward to POST for testing purposes
   return POST(request);
 }

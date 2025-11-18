@@ -54,6 +54,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   } = useSDK();
 
   const { isLoading: isLoadingAppData } = useShippingAppData();
+  const [mainLoading, setMainLoading] = useState(true);
 
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [silverPrice, setSilverPrice] = useState<number | null>(null);
@@ -77,12 +78,13 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   const loadDashboardData = useCallback(async () => {
     try {
+      const supabase = createClient();
       const accessToken = (await accessTokenPromise)!;
       const appInstance = await getAppInstance({ accessToken });
       const sitePaymentCurrency = appInstance?.site?.paymentCurrency || 'USD';
       console.log('Site payment currency: ', sitePaymentCurrency, ' and Symbol', CURRENCY_SYMBOLS[sitePaymentCurrency]);
       const instanceId = appInstance?.instance?.instanceId;
-      const supabase = createClient();
+
       const { data: rules, error } = await supabase
         .from('Dashboard Rules')
         .select('*')
@@ -138,6 +140,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       if (products) {
         setProductsToSet(products);
       }
+      setMainLoading(false);
     } catch (e) {
       console.error('Error loading dashboard data', e);
     }
@@ -221,9 +224,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
       });
 
       console.log('Updated store item prices with live prices:', result);
+      showToast({ message: 'Prices and product details updated successfully.', type: 'success' });
     } else if (pricesError) {
       showToast({
-        message: `Failed to fetch live prices: ${pricesError}`,
+        message: `Failed to update live prices: ${pricesError}`,
         type: 'error',
       });
     }
@@ -399,7 +403,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 </Cell>
               </Layout>
             ) :  */}
-            {isLoadingAppData ? (
+            {mainLoading ? (
               <Layout cols={1} alignItems='center' justifyItems='center'>
                 <Cell>
                   <Box width='100%' height='20vh' verticalAlign='middle'>
