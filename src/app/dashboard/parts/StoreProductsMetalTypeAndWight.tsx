@@ -59,17 +59,21 @@ export function StoreProductsMetalTypeAndWeight({
   const displayProducts = productsToSet.length > 0 ? productsToSet : [];
 
   // Helper function to create variant display name
-  const getVariantName = (variant: any, productName: string): string => {
-    if (!variant.choices || variant.choices.length === 0 || typeof variant.choices === 'object') {
+  const getVariantName = (variant: any, productName: string, catalogVersion: string): string => {
+    if (catalogVersion === 'v3') {
+      if (!variant.choices || variant.choices.length === 0) {
+        return `${productName} (Default)`;
+      }
+
+      const choiceNames = variant.choices
+        .map((choice: any) => choice.optionChoiceNames?.choiceName)
+        .filter(Boolean)
+        .join(' / ');
+
+      return choiceNames ? `${productName} - ${choiceNames}` : productName;
+    } else {
       return `${productName} (Default)`;
     }
-
-    const choiceNames = variant.choices
-      .map((choice: any) => choice.optionChoiceNames?.choiceName)
-      .filter(Boolean)
-      .join(' / ');
-
-    return choiceNames ? `${productName} - ${choiceNames}` : productName;
   };
 
   // Initialize state from products and build variants array
@@ -90,7 +94,7 @@ export function StoreProductsMetalTypeAndWeight({
         variants =
           product?.variantsInfo?.variants?.map((variant: any) => ({
             variantId: variant._id,
-            variantName: getVariantName(variant, product.name),
+            variantName: getVariantName(variant, product.name, 'v3'),
             sku: variant.sku || 'N/A',
             price: variant.price?.actualPrice?.amount || '0',
             choices:
@@ -109,7 +113,7 @@ export function StoreProductsMetalTypeAndWeight({
         variants =
           product?.variants?.map((variant: any) => ({
             variantId: variant._id,
-            variantName: getVariantName(variant, product.name),
+            variantName: getVariantName(variant, product.name, 'v1'),
             sku: variant?.variant.sku || 'N/A',
             price: variant?.variant?.priceData?.price || '0',
             choices: [],
