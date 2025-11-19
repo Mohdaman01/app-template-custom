@@ -11,6 +11,7 @@ import {
   Dropdown,
   Button,
   Loader,
+  Divider,
 } from '@wix/design-system';
 // import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
 import { testProducts } from '../../../..//dummy';
@@ -131,6 +132,7 @@ export function StoreProductsMetalTypeAndWeight({
                           placeholder='Select Metal Type'
                         />
                       </FormField>
+                      de
                     </Cell>
                     <Cell span={8}>
                       <FormField label={`Product Weight (grams)`}>
@@ -142,6 +144,7 @@ export function StoreProductsMetalTypeAndWeight({
                       </FormField>
                     </Cell>
                   </Box>
+                  <Divider skin='dark' />
                 </Box>
               );
             })

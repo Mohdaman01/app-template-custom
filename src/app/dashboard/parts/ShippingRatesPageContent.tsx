@@ -63,6 +63,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const [productUpdates, setProductUpdates] = useState<
     Array<{ productId: string; metalType: string; metalWeight: number | string }>
   >([]);
+  const [isProUser, setIsProUser] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [extendedFieldsLoading, setExtendedFieldsLoading] = useState(false);
@@ -111,6 +112,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       if (rules?.goldPrice) setGoldPrice(rules.goldPrice);
       if (rules?.silverPrice) setSilverPrice(rules.silverPrice);
       if (rules?.platinumPrice) setPlatinumPrice(rules.platinumPrice);
+      if (rules?.pro_user) setIsProUser(rules.pro_user);
       if (rules?.currency) setSelectedCurrency(rules.currency);
       if (rules?.use_auto_pricing) {
         console.log('if triggered for userPriceAuto: ');
@@ -414,41 +416,42 @@ export const ShippingRatesPageContent = ({}: {}) => {
             ) : (
               <Layout>
                 {/* Live Price Fetching Card */}
-                <Cell>
-                  <Card>
-                    <Card.Header title='Automatic Price Updates (Optional)' />
-                    <Card.Divider />
-                    <Card.Content>
-                      <Box direction='vertical' gap='SP4'>
-                        <FormField
-                          label='Enable Automatic Pricing'
-                          infoContent='When enabled, you can fetch live metal prices.'
-                        >
-                          <ToggleSwitch
-                            checked={useAutoPricing}
-                            onChange={async () => {
-                              const newValue = !useAutoPricing;
-                              setUseAutoPricing(newValue);
-                              console.log('Toggled newValue outside if: ', newValue);
-                              await handleFetchLivePrices(newValue);
-                            }}
-                          />
-                        </FormField>
+                {isProUser && (
+                  <Cell>
+                    <Card>
+                      <Card.Header title='Automatic Price Updates (Optional)' />
+                      <Card.Divider />
+                      <Card.Content>
+                        <Box direction='vertical' gap='SP4'>
+                          <FormField
+                            label='Enable Automatic Pricing'
+                            infoContent='When enabled, you can fetch live metal prices.'
+                          >
+                            <ToggleSwitch
+                              checked={useAutoPricing}
+                              onChange={async () => {
+                                const newValue = !useAutoPricing;
+                                setUseAutoPricing(newValue);
+                                console.log('Toggled newValue outside if: ', newValue);
+                                await handleFetchLivePrices(newValue);
+                              }}
+                            />
+                          </FormField>
 
-                        {useAutoPricing && (
-                          <>
-                            <Layout>
-                              <Cell span={6}>
-                                <FormField label='Currency'>
-                                  <Dropdown
-                                    disabled={true}
-                                    options={CURRENCY_OPTIONS}
-                                    selectedId={selectedCurrency}
-                                    onSelect={(option) => setSelectedCurrency(option.id as string)}
-                                  />
-                                </FormField>
-                              </Cell>
-                              {/* <Cell span={6}>
+                          {useAutoPricing && (
+                            <>
+                              <Layout>
+                                <Cell span={6}>
+                                  <FormField label='Currency'>
+                                    <Dropdown
+                                      disabled={true}
+                                      options={CURRENCY_OPTIONS}
+                                      selectedId={selectedCurrency}
+                                      onSelect={(option) => setSelectedCurrency(option.id as string)}
+                                    />
+                                  </FormField>
+                                </Cell>
+                                {/* <Cell span={6}>
                                 <FormField label='Fetch Live Prices'>
                                   <Button
                                     onClick={handleFetchLivePrices}
@@ -459,33 +462,33 @@ export const ShippingRatesPageContent = ({}: {}) => {
                                   </Button>
                                 </FormField>
                               </Cell> */}
-                            </Layout>
+                              </Layout>
 
-                            {lastApiUpdate && (
-                              <Box direction='vertical' gap='SP1'>
-                                <Text size='small' secondary>
-                                  Last fetched: {new Date(lastApiUpdate).toLocaleString()}
-                                </Text>
-                                {isFromCache && (
-                                  <Text size='small' skin='success'>
-                                    ✓ Loaded from cache (API calls limited to once per hour)
+                              {lastApiUpdate && (
+                                <Box direction='vertical' gap='SP1'>
+                                  <Text size='small' secondary>
+                                    Last fetched: {new Date(lastApiUpdate).toLocaleString()}
                                   </Text>
-                                )}
-                              </Box>
-                            )}
+                                  {isFromCache && (
+                                    <Text size='small' skin='success'>
+                                      ✓ Loaded from cache (API calls limited to once per hour)
+                                    </Text>
+                                  )}
+                                </Box>
+                              )}
 
-                            {pricesError && (
-                              <Text size='small' skin='error'>
-                                Error: {pricesError}
-                              </Text>
-                            )}
-                          </>
-                        )}
-                      </Box>
-                    </Card.Content>
-                  </Card>
-                </Cell>
-
+                              {pricesError && (
+                                <Text size='small' skin='error'>
+                                  Error: {pricesError}
+                                </Text>
+                              )}
+                            </>
+                          )}
+                        </Box>
+                      </Card.Content>
+                    </Card>
+                  </Cell>
+                )}
                 {/* Manual Price Entry Forms */}
                 <Cell key={1}>
                   <UpdatePriceForm

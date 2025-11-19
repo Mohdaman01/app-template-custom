@@ -7,17 +7,42 @@ export async function getStoreItemsPrices({ accessToken }: { accessToken: string
   try {
     const sdk = createSdk(accessToken);
     const version = await sdk.catalogVersioning.getCatalogVersion();
-    let items;
+    let items: any[] = [];
     if (version.catalogVersion === 'V1_CATALOG') {
-      items = await sdk.products
-        .queryProducts()
-        .find()
-        .then((res) => res.items);
+      const v1ProductQuery = await sdk.products.queryProducts().find();
+      items = v1ProductQuery.items;
+      while (v1ProductQuery.hasNext()) {
+        items = await v1ProductQuery.next().then((res) => items.concat(res.items));
+      }
     } else if (version.catalogVersion === 'V3_CATALOG') {
-      items = await sdk.productsV3
-        .queryProducts()
-        .find()
-        .then((res) => res.items);
+      const v3ProductQuery = await sdk.productsV3.queryProducts().find();
+      items = v3ProductQuery.items;
+      while (v3ProductQuery.hasNext()) {
+        items = await v3ProductQuery.next().then((res) => items.concat(res.items));
+      }
+      const productIds = items.map((item) => item._id).filter(Boolean) as string[];
+
+      console.log('Fetched V3 product IDs:', productIds.length);
+
+      // Fetch full product details using getProduct() to get variantsInfo AND options
+      // Request VARIANT_OPTION_CHOICE_NAMES to get complete choice structure
+      const fullProducts = await Promise.all(
+        productIds.map(async (productId) => {
+          try {
+            const productData = await sdk.productsV3.getProduct(productId, {
+              fields: ['VARIANT_OPTION_CHOICE_NAMES'],
+            });
+            return productData;
+          } catch (error) {
+            console.error(`Failed to fetch product ${productId}:`, error);
+            return null;
+          }
+        }),
+      );
+
+      // Filter out null results
+      items = fullProducts.filter(Boolean);
+      console.log('Fetched full V3 products:', items);
     }
     return items;
   } catch (e) {
