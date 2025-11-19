@@ -5,16 +5,25 @@ import {
   Cell,
   FormField,
   NumberInput,
-  //   Layout,
   Text,
-  //   TextButton,
   Dropdown,
   Button,
   Loader,
   Divider,
+  Badge,
 } from '@wix/design-system';
-// import { ChevronDown, ChevronUp } from '@wix/wix-ui-icons-common';
-import { testProducts } from '../../../..//dummy';
+
+interface ProductVariant {
+  variantId: string;
+  variantName: string;
+  sku: string;
+  price: string;
+  choices: Array<{
+    optionName: string;
+    choiceName: string;
+  }>;
+  inStock: boolean;
+}
 
 interface ProductUpdate {
   productId: string;
@@ -37,33 +46,44 @@ export function StoreProductsMetalTypeAndWeight({
   saveExtendedFields,
   extendedFieldsLoading,
 }: StoreProductsMetalTypeAndWeightProps) {
-  // Track local state for each product's metal type and weight
   const [productUpdates, setProductUpdates] = useState<Record<string, ProductUpdate>>({});
-  // const [loading, setLoading] = useState(false);
+  const [productVariants, setProductVariants] = useState<Record<string, ProductVariant[]>>({});
 
-  // Metal type options for dropdown
   const metalTypeOptions = [
     { id: 'GOLD', value: 'Gold' },
     { id: 'SILVER', value: 'Silver' },
     { id: 'PLATINUM', value: 'Platinum' },
   ];
 
-  // Use actual products if available, otherwise fall back to test products in development only
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const displayProducts = productsToSet.length > 0 ? productsToSet : isDevelopment ? testProducts : [];
+  const displayProducts = productsToSet.length > 0 ? productsToSet : [];
 
-  // Initialize state from products
+  // Helper function to create variant display name
+  const getVariantName = (variant: any, productName: string): string => {
+    if (!variant.choices || variant.choices.length === 0) {
+      return `${productName} (Default)`;
+    }
+
+    const choiceNames = variant.choices
+      .map((choice: any) => choice.optionChoiceNames?.choiceName)
+      .filter(Boolean)
+      .join(' / ');
+
+    return choiceNames ? `${productName} - ${choiceNames}` : productName;
+  };
+
+  // Initialize state from products and build variants array
   useEffect(() => {
     const initialUpdates: Record<string, ProductUpdate> = {};
+    const allVariants: Record<string, ProductVariant[]> = {};
+
     displayProducts.forEach((product) => {
-      let metalType, metalWeight;
+      // Extract metal type and weight
+      let metalType = '';
+      let metalWeight = 0;
+
       if (product?.extendedFields) {
         metalType = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
         metalWeight = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight || 0;
-      } else {
-        metalType = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType')?.props?.content || '';
-        metalWeight =
-          parseFloat(product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalWeight')?.props?.content) || 0;
       }
 
       initialUpdates[product._id] = {
@@ -71,11 +91,29 @@ export function StoreProductsMetalTypeAndWeight({
         metalType,
         metalWeight,
       };
+
+      // Build variants array - every product has at least one variant
+      const variants: ProductVariant[] =
+        product?.variantsInfo?.variants?.map((variant: any) => ({
+          variantId: variant._id,
+          variantName: getVariantName(variant, product.name),
+          sku: variant.sku || 'N/A',
+          price: variant.price?.actualPrice?.amount || '0',
+          choices:
+            variant.choices?.map((choice: any) => ({
+              optionName: choice.optionChoiceNames?.optionName || '',
+              choiceName: choice.optionChoiceNames?.choiceName || '',
+            })) || [],
+          inStock: variant.inventoryStatus?.inStock || false,
+        })) || [];
+
+      allVariants[product._id] = variants;
     });
+
     setProductUpdates(initialUpdates);
+    setProductVariants(allVariants);
   }, [displayProducts]);
 
-  // Notify parent whenever updates change
   useEffect(() => {
     if (onProductUpdatesChanged) {
       const updatesArray = Object.values(productUpdates);
@@ -119,12 +157,51 @@ export function StoreProductsMetalTypeAndWeight({
           {displayProducts && displayProducts.length > 0 ? (
             displayProducts.map((product, index) => {
               const currentUpdate = productUpdates[product._id];
+              const variants = productVariants[product._id] || [];
+
               return (
                 <Box key={product._id || index} direction='vertical' gap='SP4'>
-                  <Text>{product.name}</Text>
+                  <Text weight='bold' size='medium'>
+                    {product.name}
+                  </Text>
+
+                  {/* Variants Section */}
+                  {variants.length > 0 && (
+                    <Box direction='vertical' gap='SP3' backgroundColor='D70' padding='SP3' borderRadius='6px'>
+                      <Text size='small' weight='bold' secondary>
+                        Variants ({variants.length})
+                      </Text>
+                      {variants.map((variant) => (
+                        <Box
+                          key={variant.variantId}
+                          direction='horizontal'
+                          gap='SP3'
+                          align='center'
+                          padding='SP2'
+                          backgroundColor='D80'
+                          borderRadius='4px'
+                        >
+                          <Box direction='vertical' gap='SP1' flex={1}>
+                            <Text size='small'>{variant.variantName}</Text>
+                            <Text size='tiny' secondary>
+                              SKU: {variant.sku}
+                            </Text>
+                          </Box>
+                          <Text size='small' weight='bold'>
+                            ₹{variant.price}
+                          </Text>
+                          <Badge skin={variant.inStock ? 'success' : 'danger'} size='small'>
+                            {variant.inStock ? 'In Stock' : 'Out of Stock'}
+                          </Badge>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+
+                  {/* Product Metal Type & Weight */}
                   <Box direction='horizontal' gap='SP6'>
                     <Cell span={8}>
-                      <FormField label={`Product Metal Type`}>
+                      <FormField label='Product Metal Type'>
                         <Dropdown
                           options={metalTypeOptions}
                           selectedId={currentUpdate?.metalType || ''}
@@ -132,10 +209,9 @@ export function StoreProductsMetalTypeAndWeight({
                           placeholder='Select Metal Type'
                         />
                       </FormField>
-                      de
                     </Cell>
                     <Cell span={8}>
-                      <FormField label={`Product Weight (grams)`}>
+                      <FormField label='Product Weight (grams)'>
                         <NumberInput
                           value={currentUpdate?.metalWeight || 0}
                           suffix='g'
@@ -144,7 +220,8 @@ export function StoreProductsMetalTypeAndWeight({
                       </FormField>
                     </Cell>
                   </Box>
-                  <Divider skin='dark' />
+
+                  {index < displayProducts.length - 1 && <Divider skin='dark' />}
                 </Box>
               );
             })

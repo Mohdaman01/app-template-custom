@@ -42,7 +42,7 @@ export async function getStoreItemsPrices({ accessToken }: { accessToken: string
 
       // Filter out null results
       items = fullProducts.filter(Boolean);
-      console.log('Fetched full V3 products:', items);
+      // console.log('Fetched full V3 products:', items);
     }
     return items;
   } catch (e) {
