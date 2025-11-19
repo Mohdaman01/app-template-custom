@@ -60,7 +60,7 @@ export function StoreProductsMetalTypeAndWeight({
 
   // Helper function to create variant display name
   const getVariantName = (variant: any, productName: string): string => {
-    if (!variant.choices || variant.choices.length === 0) {
+    if (!variant.choices || variant.choices.length === 0 || typeof variant.choices === 'object') {
       return `${productName} (Default)`;
     }
 
@@ -112,11 +112,7 @@ export function StoreProductsMetalTypeAndWeight({
             variantName: getVariantName(variant, product.name),
             sku: variant?.variant.sku || 'N/A',
             price: variant?.variant?.priceData?.price || '0',
-            choices:
-              variant.choices?.map((choice: any) => ({
-                optionName: choice.optionChoiceNames?.optionName || '',
-                choiceName: choice.optionChoiceNames?.choiceName || '',
-              })) || [],
+            choices: [],
             inStock: variant.stock?.inStock || false,
           })) || [];
       }
