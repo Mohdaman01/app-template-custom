@@ -4,11 +4,11 @@ import { cookies } from 'next/headers';
 import { createServiceClient, createClient } from '@/app/utils/supabase/server';
 import { createClient as wixClient } from '@wix/sdk/client';
 import { AppStrategy } from '@wix/sdk';
-import { products as Products, productsV3 as ProdcutsV3, catalogVersioning } from '@wix/stores';
+import { products, productsV3, catalogVersioning } from '@wix/stores';
 
 async function getAllProducts(myClient: any) {
   let allProducts: any[] = [];
-  let queryResult = await myClient.ProdcutsV3.queryProducts().find();
+  let queryResult = await myClient.productsV3.queryProducts().find();
 
   allProducts = allProducts.concat(queryResult.items);
 
@@ -140,6 +140,8 @@ export async function POST(request: NextRequest) {
     );
 
     // Updating product prices for pro users with auto pricing enabled
+    const productUpdateResults: { userId: string; success: boolean; error?: string; productsUpdated?: number }[] = [];
+
     try {
       const { data: proUsers, error: err } = await supabase
         .from('Dashboard Rules')
@@ -147,209 +149,261 @@ export async function POST(request: NextRequest) {
         .eq('pro_user', true)
         .eq('use_auto_pricing', true);
 
-      console.log('Pro users with auto pricing enabled:', proUsers);
+      if (err) {
+        console.error('Error fetching pro users:', err);
+      } else {
+        console.log(`[CRON] Found ${proUsers?.length || 0} pro users with auto pricing enabled`);
 
-      for (const user of proUsers || []) {
-        const instanceId = user.instance_id;
-        const tempAppClient = wixClient({
-          auth: AppStrategy({
-            appId: process.env.WIX_APP_ID!,
-            appSecret: process.env.WIX_APP_SECRET!,
-            publicKey: process.env.WIX_APP_JWT_KEY,
-            instanceId: instanceId,
-          }),
-          modules: { Products, ProdcutsV3, catalogVersioning },
-        });
+        for (const user of proUsers || []) {
+          try {
+            const instanceId = user.instance_id;
+            console.log(`[CRON] Processing user: ${instanceId}`);
 
-        const products = await getAllProducts(tempAppClient);
-        const { catalogVersion } = await tempAppClient.catalogVersioning.getCatalogVersion();
-
-        if (catalogVersion === 'V1_CATALOG') {
-          const productsToUpdate = products
-            .map((product) => {
-              const productWithExtendedFields = product as any;
-              const metalType =
-                productWithExtendedFields.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType').props
-                  ?.content || '';
-              const metalWeight =
-                productWithExtendedFields.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalWeight')?.props
-                  ?.content || 0;
-
-              const normalizedMetalType = metalType?.toUpperCase();
-              if (!normalizedMetalType || !['GOLD', 'SILVER', 'PLATINUM'].includes(normalizedMetalType)) {
-                return null;
-              }
-
-              const newPrice = calculatePrice(
-                metalType,
-                metalWeight,
-                user.goldPrice,
-                user.silverPrice,
-                user.platinumPrice,
-              );
-
-              return {
-                ...product,
-                priceData: {
-                  ...product.priceData,
-                  price: newPrice,
-                },
-                lastUpdated: new Date(),
-              };
-            })
-            .filter((product): product is NonNullable<typeof product> => product !== null);
-
-          console.log(`Updating ${productsToUpdate.length} out of ${products.length} V1 products with valid MetalType`);
-
-          await Promise.all(
-            productsToUpdate.map((product) =>
-              tempAppClient.Products.updateProduct(product._id!, {
-                priceData: product.priceData,
+            const tempAppClient = wixClient({
+              auth: AppStrategy({
+                appId: process.env.WIX_APP_ID!,
+                appSecret: process.env.WIX_APP_SECRET!,
+                publicKey: process.env.WIX_APP_JWT_KEY,
+                instanceId: instanceId,
               }),
-            ),
-          );
+              modules: { products, productsV3, catalogVersioning },
+            });
 
-          // Changed: Don't return here, continue to next user
-          console.log(`Updated ${productsToUpdate.length} V1 products for user ${instanceId}`);
-        } else if (catalogVersion === 'V3_CATALOG') {
-          const items = await getAllProducts(tempAppClient);
-          const productIds = items.map((item) => item._id).filter(Boolean) as string[];
+            const allProducts = await getAllProducts(tempAppClient);
+            const { catalogVersion } = await tempAppClient.catalogVersioning.getCatalogVersion();
 
-          console.log('Fetched V3 product IDs:', productIds.length);
+            console.log(`[CRON] User ${instanceId} has catalog version: ${catalogVersion}`);
 
-          const fullProducts = await Promise.all(
-            productIds.map(async (productId) => {
-              try {
-                const productData = await tempAppClient.ProdcutsV3.getProduct(productId, {
-                  fields: ['VARIANT_OPTION_CHOICE_NAMES'],
-                });
-                return productData;
-              } catch (error) {
-                console.error(`Failed to fetch product ${productId}:`, error);
-                return null;
-              }
-            }),
-          );
+            if (catalogVersion === 'V1_CATALOG') {
+              const productsToUpdate = allProducts
+                .map((product) => {
+                  try {
+                    const productWithExtendedFields = product as any;
+                    const tags = productWithExtendedFields.seoData?.tags || [];
 
-          const validProducts = fullProducts.filter(Boolean);
-          console.log(
-            'No of Fetched full V3 products:',
-            validProducts.length,
-            'and product structure',
-            validProducts[0],
-          );
+                    const metalTypeTag = tags.find((tag: any) => tag.props?.name === 'MetalType');
+                    const metalWeightTag = tags.find((tag: any) => tag.props?.name === 'MetalWeight');
 
-          const productsToUpdate = validProducts
-            .map((product) => {
-              const metalType =
-                product?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
-              const metalWeight =
-                product?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight || 0;
+                    const metalType = metalTypeTag?.props?.content || '';
+                    const metalWeight = parseFloat(metalWeightTag?.props?.content) || 0;
 
-              const normalizedMetalType = (metalType as string)?.toUpperCase();
-              if (!normalizedMetalType || !['GOLD', 'SILVER', 'PLATINUM'].includes(normalizedMetalType)) {
-                return null;
-              }
+                    const normalizedMetalType = metalType?.toUpperCase();
+                    if (!normalizedMetalType || !['GOLD', 'SILVER', 'PLATINUM'].includes(normalizedMetalType)) {
+                      return null;
+                    }
 
-              const newPrice = calculatePrice(
-                metalType as string,
-                metalWeight as number,
-                user.goldPrice,
-                user.silverPrice,
-                user.platinumPrice,
+                    const newPrice = calculatePrice(
+                      metalType,
+                      metalWeight,
+                      user.goldPrice,
+                      user.silverPrice,
+                      user.platinumPrice,
+                    );
+
+                    return {
+                      ...product,
+                      priceData: {
+                        ...product.priceData,
+                        price: newPrice,
+                      },
+                      lastUpdated: new Date(),
+                    };
+                  } catch (error) {
+                    console.error(`[CRON] Error processing V1 product ${product._id}:`, error);
+                    return null;
+                  }
+                })
+                .filter((product): product is NonNullable<typeof product> => product !== null);
+
+              console.log(
+                `[CRON] Updating ${productsToUpdate.length} out of ${allProducts.length} V1 products with valid MetalType`,
               );
 
-              const variants = product?.variantsInfo?.variants || [];
+              await Promise.all(
+                productsToUpdate.map((product) =>
+                  tempAppClient.products.updateProduct(product._id!, {
+                    priceData: product.priceData,
+                  }),
+                ),
+              );
 
-              const updatedVariants = variants.map((variant) => {
-                return {
-                  _id: variant._id,
-                  choices: variant.choices?.map((choice) => ({
-                    optionChoiceIds: {
-                      optionId: choice.optionChoiceIds?.optionId,
-                      choiceId: choice.optionChoiceIds?.choiceId,
-                    },
-                    optionChoiceNames: {
-                      optionName: choice.optionChoiceNames?.optionName,
-                      choiceName: choice.optionChoiceNames?.choiceName,
-                      renderType: choice.optionChoiceNames?.renderType,
-                    },
-                  })),
-                  price: {
-                    actualPrice: {
-                      amount: newPrice.toFixed(2).toString(),
-                    },
-                  },
-                  ...(variant.sku && { sku: variant.sku }),
-                  ...(variant.barcode && { barcode: variant.barcode }),
-                  ...(variant.visible !== undefined && { visible: variant.visible }),
-                };
+              productUpdateResults.push({
+                userId: instanceId,
+                success: true,
+                productsUpdated: productsToUpdate.length,
               });
 
-              return {
-                product: {
-                  _id: product?._id,
-                  revision: product?.revision,
-                  options:
-                    product?.options?.map((option) => ({
-                      _id: option._id,
-                      name: option.name,
-                      optionRenderType: option.optionRenderType,
-                      choicesSettings: {
-                        choices: option.choicesSettings?.choices?.map((choice) => ({
-                          choiceId: choice.choiceId,
-                          name: choice.name,
-                          choiceType: choice.choiceType,
-                          ...(choice.colorCode && { colorCode: choice.colorCode }),
-                          ...(choice.linkedMedia && { linkedMedia: choice.linkedMedia }),
+              console.log(`[CRON] Updated ${productsToUpdate.length} V1 products for user ${instanceId}`);
+            } else if (catalogVersion === 'V3_CATALOG') {
+              const items = await getAllProducts(tempAppClient);
+              const productIds = items.map((item) => item._id).filter(Boolean) as string[];
+
+              console.log(`[CRON] Fetched ${productIds.length} V3 product IDs`);
+
+              const fullProducts = await Promise.all(
+                productIds.map(async (productId) => {
+                  try {
+                    const productData = await tempAppClient.productsV3.getProduct(productId, {
+                      fields: ['VARIANT_OPTION_CHOICE_NAMES'],
+                    });
+                    return productData;
+                  } catch (error) {
+                    console.error(`[CRON] Failed to fetch product ${productId}:`, error);
+                    return null;
+                  }
+                }),
+              );
+
+              const validProducts = fullProducts.filter(Boolean);
+              console.log(`[CRON] Fetched ${validProducts.length} full V3 products`);
+
+              const productsToUpdate = validProducts
+                .map((product) => {
+                  try {
+                    const metalType =
+                      product?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
+                    const metalWeight =
+                      parseFloat(
+                        product?.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight,
+                      ) || 0;
+
+                    const normalizedMetalType = (metalType as string)?.toUpperCase();
+                    if (!normalizedMetalType || !['GOLD', 'SILVER', 'PLATINUM'].includes(normalizedMetalType)) {
+                      return null;
+                    }
+
+                    const newPrice = calculatePrice(
+                      metalType as string,
+                      metalWeight,
+                      user.goldPrice,
+                      user.silverPrice,
+                      user.platinumPrice,
+                    );
+
+                    const variants = product?.variantsInfo?.variants || [];
+
+                    const updatedVariants = variants.map((variant) => {
+                      return {
+                        _id: variant._id,
+                        choices: variant.choices?.map((choice) => ({
+                          optionChoiceIds: {
+                            optionId: choice.optionChoiceIds?.optionId,
+                            choiceId: choice.optionChoiceIds?.choiceId,
+                          },
+                          optionChoiceNames: {
+                            optionName: choice.optionChoiceNames?.optionName,
+                            choiceName: choice.optionChoiceNames?.choiceName,
+                            renderType: choice.optionChoiceNames?.renderType,
+                          },
                         })),
+                        price: {
+                          actualPrice: {
+                            amount: newPrice.toFixed(2).toString(),
+                          },
+                        },
+                        ...(variant.sku && { sku: variant.sku }),
+                        ...(variant.barcode && { barcode: variant.barcode }),
+                        ...(variant.visible !== undefined && { visible: variant.visible }),
+                      };
+                    });
+
+                    return {
+                      product: {
+                        _id: product?._id,
+                        revision: product?.revision,
+                        options:
+                          product?.options?.map((option) => ({
+                            _id: option._id,
+                            name: option.name,
+                            optionRenderType: option.optionRenderType,
+                            choicesSettings: {
+                              choices: option.choicesSettings?.choices?.map((choice) => ({
+                                choiceId: choice.choiceId,
+                                name: choice.name,
+                                choiceType: choice.choiceType,
+                                ...(choice.colorCode && { colorCode: choice.colorCode }),
+                                ...(choice.linkedMedia && { linkedMedia: choice.linkedMedia }),
+                              })),
+                            },
+                          })) || [],
+                        variantsInfo: {
+                          variants: updatedVariants,
+                        },
                       },
-                    })) || [],
-                  variantsInfo: {
-                    variants: updatedVariants,
-                  },
-                },
-              };
-            })
-            .filter((item): item is NonNullable<typeof item> => item !== null);
+                    };
+                  } catch (error) {
+                    console.error(`[CRON] Error processing V3 product ${product?._id}:`, error);
+                    return null;
+                  }
+                })
+                .filter((item): item is NonNullable<typeof item> => item !== null);
 
-          console.log(
-            `Prepared ${productsToUpdate.length} out of ${validProducts.length} V3 products for bulk update with valid MetalType`,
-          );
+              console.log(
+                `[CRON] Prepared ${productsToUpdate.length} out of ${validProducts.length} V3 products for bulk update`,
+              );
 
-          if (productsToUpdate.length === 0) {
-            console.log('No V3 products with valid MetalType to update');
-            // Changed: Don't return here, continue to next user
-            continue;
+              if (productsToUpdate.length === 0) {
+                console.log('[CRON] No V3 products with valid MetalType to update');
+                productUpdateResults.push({
+                  userId: instanceId,
+                  success: true,
+                  productsUpdated: 0,
+                });
+                continue;
+              }
+
+              const batchSize = 100;
+              const batchResults = [];
+
+              for (let i = 0; i < productsToUpdate.length; i += batchSize) {
+                const batch = productsToUpdate.slice(i, i + batchSize);
+                const batchResult = await tempAppClient.productsV3.bulkUpdateProductsWithInventory(batch, {});
+                batchResults.push(...(batchResult?.productResults?.results || []));
+              }
+
+              const updatedProducts = batchResults.filter((result) => result.item).map((result) => result.item);
+
+              productUpdateResults.push({
+                userId: instanceId,
+                success: true,
+                productsUpdated: updatedProducts.length,
+              });
+
+              console.log(`[CRON] Successfully updated ${updatedProducts.length} V3 products for user ${instanceId}`);
+            }
+          } catch (error) {
+            console.error(`[CRON] Error updating products for user ${user.instance_id}:`, error);
+            productUpdateResults.push({
+              userId: user.instance_id,
+              success: false,
+              error: error instanceof Error ? error.message : String(error),
+            });
           }
-
-          const batchSize = 100;
-          const batchResults = [];
-
-          for (let i = 0; i < productsToUpdate.length; i += batchSize) {
-            const batch = productsToUpdate.slice(i, i + batchSize);
-            const batchResult = await tempAppClient.ProdcutsV3.bulkUpdateProductsWithInventory(batch, {});
-            batchResults.push(...(batchResult?.productResults?.results || []));
-          }
-
-          const updatedProducts = batchResults.filter((result) => result.item).map((result) => result.item);
-
-          console.log('Successfully updated V3 products:', updatedProducts.length);
         }
       }
     } catch (err) {
-      console.error('Error updating product prices for users:', err);
+      console.error('[CRON] Error in product update section:', err);
     }
 
     const successful = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
     const failed = results.length - successful;
 
+    const productsUpdatedCount = productUpdateResults.reduce((sum, r) => sum + (r.productsUpdated || 0), 0);
+    const usersUpdated = productUpdateResults.filter((r) => r.success).length;
+
     console.log(`[CRON] Metal prices update completed: ${successful} successful, ${failed} failed`);
+    console.log(`[CRON] Product updates: ${productsUpdatedCount} products updated for ${usersUpdated} users`);
 
     return NextResponse.json({
       success: true,
       message: `Updated prices for ${successful}/${results.length} currencies`,
       results: results.map((r) => (r.status === 'fulfilled' ? r.value : { error: r.reason })),
+      productUpdates: {
+        usersProcessed: productUpdateResults.length,
+        usersSuccessful: usersUpdated,
+        totalProductsUpdated: productsUpdatedCount,
+        details: productUpdateResults,
+      },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
