@@ -533,6 +533,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     onProductUpdatesChanged={handleProductUpdatesChanged}
                     saveExtendedFields={saveExtendedFields}
                     extendedFieldsLoading={extendedFieldsLoading}
+                    prefix={currencyPrefix}
                   />
                 </Cell>
               </Layout>

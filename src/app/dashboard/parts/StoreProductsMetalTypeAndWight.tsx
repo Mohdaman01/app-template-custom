@@ -37,14 +37,15 @@ interface StoreProductsMetalTypeAndWeightProps {
   onProductUpdatesChanged?: (updates: ProductUpdate[]) => void;
   saveExtendedFields?: () => Promise<void>;
   extendedFieldsLoading?: boolean;
+  prefix?: string;
 }
-
 export function StoreProductsMetalTypeAndWeight({
   title,
   productsToSet,
   onProductUpdatesChanged,
   saveExtendedFields,
   extendedFieldsLoading,
+  prefix,
 }: StoreProductsMetalTypeAndWeightProps) {
   const [productUpdates, setProductUpdates] = useState<Record<string, ProductUpdate>>({});
   const [productVariants, setProductVariants] = useState<Record<string, ProductVariant[]>>({});
@@ -80,10 +81,44 @@ export function StoreProductsMetalTypeAndWeight({
       // Extract metal type and weight
       let metalType = '';
       let metalWeight = 0;
+      let variants: ProductVariant[] = [];
 
       if (product?.extendedFields) {
         metalType = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalType || '';
         metalWeight = product.extendedFields?.namespaces?.['@wixfreaks/test-shipping-example']?.MetalWeight || 0;
+        // Build variants array - every product has at least one variant
+        variants =
+          product?.variantsInfo?.variants?.map((variant: any) => ({
+            variantId: variant._id,
+            variantName: getVariantName(variant, product.name),
+            sku: variant.sku || 'N/A',
+            price: variant.price?.actualPrice?.amount || '0',
+            choices:
+              variant.choices?.map((choice: any) => ({
+                optionName: choice.optionChoiceNames?.optionName || '',
+                choiceName: choice.optionChoiceNames?.choiceName || '',
+              })) || [],
+            inStock: variant.inventoryStatus?.inStock || false,
+          })) || [];
+      } else {
+        metalType = product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalType')?.props?.content || '';
+        metalWeight =
+          parseFloat(product.seoData?.tags?.find((tag: any) => tag.props?.name === 'MetalWeight')?.props?.content) || 0;
+
+        // Build variants array - every product has at least one variant
+        variants =
+          product?.variants?.map((variant: any) => ({
+            variantId: variant._id,
+            variantName: getVariantName(variant, product.name),
+            sku: variant?.variant.sku || 'N/A',
+            price: variant?.variant?.priceData?.price || '0',
+            choices:
+              variant.choices?.map((choice: any) => ({
+                optionName: choice.optionChoiceNames?.optionName || '',
+                choiceName: choice.optionChoiceNames?.choiceName || '',
+              })) || [],
+            inStock: variant.stock?.inStock || false,
+          })) || [];
       }
 
       initialUpdates[product._id] = {
@@ -91,21 +126,6 @@ export function StoreProductsMetalTypeAndWeight({
         metalType,
         metalWeight,
       };
-
-      // Build variants array - every product has at least one variant
-      const variants: ProductVariant[] =
-        product?.variantsInfo?.variants?.map((variant: any) => ({
-          variantId: variant._id,
-          variantName: getVariantName(variant, product.name),
-          sku: variant.sku || 'N/A',
-          price: variant.price?.actualPrice?.amount || '0',
-          choices:
-            variant.choices?.map((choice: any) => ({
-              optionName: choice.optionChoiceNames?.optionName || '',
-              choiceName: choice.optionChoiceNames?.choiceName || '',
-            })) || [],
-          inStock: variant.inventoryStatus?.inStock || false,
-        })) || [];
 
       allVariants[product._id] = variants;
     });
@@ -188,7 +208,8 @@ export function StoreProductsMetalTypeAndWeight({
                             </Text>
                           </Box>
                           <Text size='small' weight='bold'>
-                            ₹{variant.price}
+                            {prefix}
+                            {variant.price}
                           </Text>
                           <Badge skin={variant.inStock ? 'success' : 'danger'} size='small'>
                             {variant.inStock ? 'In Stock' : 'Out of Stock'}
