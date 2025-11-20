@@ -168,7 +168,7 @@ export function StoreProductsMetalTypeAndWeight({
       <Card.Header
         title={title}
         suffix={
-          <Button onClick={() => saveExtendedFields && saveExtendedFields()} disabled={!saveExtendedFieldsBtnDisabled}>
+          <Button onClick={() => saveExtendedFields && saveExtendedFields()} disabled={saveExtendedFieldsBtnDisabled}>
             {extendedFieldsLoading ? <Loader size='tiny' /> : 'Save'}
           </Button>
         }
