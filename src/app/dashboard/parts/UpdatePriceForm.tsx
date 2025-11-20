@@ -23,6 +23,7 @@ export function UpdatePriceForm({
   updateStoreItemPriceSilver,
   updateStoreItemPricePlatinum,
   prefix,
+  disabled,
 }: {
   title: string;
   goldPrice: number;
@@ -32,6 +33,7 @@ export function UpdatePriceForm({
   updateStoreItemPriceSilver: (newPrice: number) => void;
   updateStoreItemPricePlatinum: (newPrice: number) => void;
   prefix?: string;
+  disabled: boolean;
 }) {
   // console.log('UpdatePriceForm rendered with prefix: ', prefix);
   // const [checked, setChecked] = useState(false);
@@ -76,6 +78,7 @@ export function UpdatePriceForm({
                     onChange={(value) => {
                       updateStoreItemPriceGold(value ?? 0);
                     }}
+                    disabled={disabled}
                   />
                 </FormField>
               </Cell>
@@ -95,6 +98,7 @@ export function UpdatePriceForm({
                     onChange={(value) => {
                       updateStoreItemPriceSilver(value ?? 0);
                     }}
+                    disabled={disabled}
                   />
                 </FormField>
               </Cell>
@@ -114,6 +118,7 @@ export function UpdatePriceForm({
                     onChange={(value) => {
                       updateStoreItemPricePlatinum(value ?? 0);
                     }}
+                    disabled={disabled}
                   />
                 </FormField>
               </Cell>

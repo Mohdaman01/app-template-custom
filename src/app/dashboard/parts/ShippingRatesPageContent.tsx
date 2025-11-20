@@ -53,7 +53,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
     dashboard: { showToast, navigate },
   } = useSDK();
 
-  const { isLoading: isLoadingAppData } = useShippingAppData();
+  // const { isLoading: isLoadingAppData } = useShippingAppData();
   const [mainLoading, setMainLoading] = useState(true);
 
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
@@ -67,6 +67,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   const [loading, setLoading] = useState(false);
   const [extendedFieldsLoading, setExtendedFieldsLoading] = useState(false);
+  const [saveExtendedFieldsBtnEnabled, setSaveExtendedFieldsBtnEnabled] = useState(false);
   const [useAutoPricing, setUseAutoPricing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState('USD');
   const [lastApiUpdate, setLastApiUpdate] = useState<string | null>(null);
@@ -301,6 +302,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
             updates: productUpdates,
           });
         }
+        setSaveExtendedFieldsBtnEnabled(false);
         showToast({ message: 'Product details updated successfully.', type: 'success' });
       } catch (e) {
         console.error('Error updating product details:', e);
@@ -325,10 +327,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const handleProductUpdatesChanged = useCallback(
     (updates: Array<{ productId: string; metalType: string; metalWeight: number | string }>) => {
       setProductUpdates(updates);
+      setSaveExtendedFieldsBtnEnabled(updates.length > 0);
     },
     [],
   );
-  // const currencySymbol = CURRENCY_SYMBOLS[selectedCurrency] || '$';
 
   const ButtonsBar = useCallback(
     () => (
@@ -506,27 +508,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
                       setUpdatedPlatinumPriceForMethod(newPrice);
                     }}
                     prefix={currencyPrefix}
+                    disabled={isProUser ? true : false}
                   />
                 </Cell>
-                {/* <Cell key={2}>
-                  <UpdatePriceForm
-                    title='Silver Price'
-                    price={silverPrice ?? 0}
-                    updateStoreItemPrice={async (newPrice: number) => {
-                      setUpdatedSilverPriceForMethod(newPrice);
-                    }}
-                  />
-                </Cell>
-                <Cell key={3}>
-                  <UpdatePriceForm
-                    title='Platinum Price'
-                    price={platinumPrice ?? 0}
-                    updateStoreItemPrice={async (newPrice: number) => {
-                      setUpdatedPlatinumPriceForMethod(newPrice);
-                    }}
-                  />
-                </Cell> */}
-                <Cell key={4}>
+                <Cell key={2}>
                   <StoreProductsMetalTypeAndWeight
                     title='Set Current Products (Metal type/Weight in grams)'
                     productsToSet={productsToSet}
@@ -534,6 +519,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     saveExtendedFields={saveExtendedFields}
                     extendedFieldsLoading={extendedFieldsLoading}
                     prefix={currencyPrefix}
+                    saveExtendedFieldsBtnEnabled={saveExtendedFieldsBtnEnabled}
                   />
                 </Cell>
               </Layout>
