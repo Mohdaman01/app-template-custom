@@ -67,7 +67,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   const [loading, setLoading] = useState(false);
   const [extendedFieldsLoading, setExtendedFieldsLoading] = useState(false);
-  const [saveExtendedFieldsBtnEnabled, setSaveExtendedFieldsBtnEnabled] = useState(false);
+  const [saveExtendedFieldsBtnEnabled, setSaveExtendedFieldsBtnEnabled] = useState(true);
   const [useAutoPricing, setUseAutoPricing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState('USD');
   const [lastApiUpdate, setLastApiUpdate] = useState<string | null>(null);
