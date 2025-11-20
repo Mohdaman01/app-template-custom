@@ -38,7 +38,7 @@ interface StoreProductsMetalTypeAndWeightProps {
   saveExtendedFields?: () => Promise<void>;
   extendedFieldsLoading?: boolean;
   prefix?: string;
-  saveExtendedFieldsBtnEnabled?: boolean;
+  saveExtendedFieldsBtnDisabled?: boolean;
 }
 export function StoreProductsMetalTypeAndWeight({
   title,
@@ -47,7 +47,7 @@ export function StoreProductsMetalTypeAndWeight({
   saveExtendedFields,
   extendedFieldsLoading,
   prefix,
-  saveExtendedFieldsBtnEnabled,
+  saveExtendedFieldsBtnDisabled,
 }: StoreProductsMetalTypeAndWeightProps) {
   const [productUpdates, setProductUpdates] = useState<Record<string, ProductUpdate>>({});
   const [productVariants, setProductVariants] = useState<Record<string, ProductVariant[]>>({});
@@ -168,7 +168,7 @@ export function StoreProductsMetalTypeAndWeight({
       <Card.Header
         title={title}
         suffix={
-          <Button onClick={() => saveExtendedFields && saveExtendedFields()} disabled={!saveExtendedFieldsBtnEnabled}>
+          <Button onClick={() => saveExtendedFields && saveExtendedFields()} disabled={!saveExtendedFieldsBtnDisabled}>
             {extendedFieldsLoading ? <Loader size='tiny' /> : 'Save'}
           </Button>
         }

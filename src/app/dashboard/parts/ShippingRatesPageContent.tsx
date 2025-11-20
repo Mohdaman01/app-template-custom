@@ -67,7 +67,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   const [loading, setLoading] = useState(false);
   const [extendedFieldsLoading, setExtendedFieldsLoading] = useState(false);
-  const [saveExtendedFieldsBtnEnabled, setSaveExtendedFieldsBtnEnabled] = useState(true);
+  const [saveExtendedFieldsBtnDisabled, setSaveExtendedFieldsBtnDisabled] = useState(true);
   const [useAutoPricing, setUseAutoPricing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState('USD');
   const [lastApiUpdate, setLastApiUpdate] = useState<string | null>(null);
@@ -302,7 +302,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
             updates: productUpdates,
           });
         }
-        setSaveExtendedFieldsBtnEnabled(false);
+        setSaveExtendedFieldsBtnDisabled(true);
         showToast({ message: 'Product details updated successfully.', type: 'success' });
       } catch (e) {
         console.error('Error updating product details:', e);
@@ -327,7 +327,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const handleProductUpdatesChanged = useCallback(
     (updates: Array<{ productId: string; metalType: string; metalWeight: number | string }>) => {
       setProductUpdates(updates);
-      setSaveExtendedFieldsBtnEnabled(updates.length > 0);
+      setSaveExtendedFieldsBtnDisabled(!(updates.length > 0));
     },
     [],
   );
@@ -519,7 +519,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     saveExtendedFields={saveExtendedFields}
                     extendedFieldsLoading={extendedFieldsLoading}
                     prefix={currencyPrefix}
-                    saveExtendedFieldsBtnEnabled={saveExtendedFieldsBtnEnabled}
+                    saveExtendedFieldsBtnDisabled={saveExtendedFieldsBtnDisabled}
                   />
                 </Cell>
               </Layout>
