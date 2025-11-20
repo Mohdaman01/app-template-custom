@@ -326,10 +326,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   const handleProductUpdatesChanged = useCallback(
     (updates: Array<{ productId: string; metalType: string; metalWeight: number | string }>) => {
-      console.log('Product updates changed: ', updates);
-      console.log(JSON.stringify(updates) === JSON.stringify(productUpdates));
+      console.log('Product updates changed: ', productUpdates);
       setProductUpdates(updates);
-      if (JSON.stringify(updates) === JSON.stringify(productUpdates)) {
+      if (productUpdates) {
         setSaveExtendedFieldsBtnDisabled(false);
       }
     },
