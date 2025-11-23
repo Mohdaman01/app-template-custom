@@ -400,6 +400,24 @@ export const ShippingRatesPageContent = ({}: {}) => {
     })();
   };
 
+  const deleteAdditionalCost = (costId: number) => {
+    const instanceId = appInstance?.instance?.instanceId;
+    console.log('Deleting additional cost for ', instanceId, ' costId: ', costId);
+
+    const supabase = createClient();
+    // Delete additional cost in Dashboard Rules
+    (async () => {
+      const { error } = await supabase.from('Additional Costs').delete().eq('id', costId).eq('instance_id', instanceId);
+
+      if (error) {
+        console.error('Failed to delete additional cost', error);
+        return;
+      }
+      console.log('Deleted additional cost with id:', costId);
+      setAdditionalCosts((prevCosts) => prevCosts.filter((cost) => cost.id !== costId));
+    })();
+  };
+
   return (
     <Page height='100vh' dataHook={testIds.DASHBOARD.WRAPPER}>
       <Page.Header
@@ -551,6 +569,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                     disabled={false}
                     addAdditionalCost={addAdditionalCost}
                     additionalCosts={additionalCosts}
+                    deleteAdditionalCost={deleteAdditionalCost}
                   />
                 </Cell>
                 <Cell key={3}>

@@ -7,12 +7,14 @@ export function AdditionalCostForm({
   disabled,
   addAdditionalCost,
   additionalCosts,
+  deleteAdditionalCost,
 }: {
   title: string;
   prefix?: string;
   disabled: boolean;
   addAdditionalCost?: (costName: string, cost: number | string) => void;
   additionalCosts?: any[];
+  deleteAdditionalCost?: (costId: number) => void;
 }) {
   const [newCostName, setNewCostName] = useState('');
   const [newCostValue, setNewCostValue] = useState(0);
@@ -75,6 +77,15 @@ export function AdditionalCostForm({
                         {prefix}
                         {cost.cost}
                       </Text>
+                    </Cell>
+                    <Cell>
+                      <Button
+                        skin='destructive'
+                        size='small'
+                        onClick={() => deleteAdditionalCost && deleteAdditionalCost(cost.id)}
+                      >
+                        Delete
+                      </Button>
                     </Cell>
                   </Layout>
                   {index < additionalCosts.length - 1 && <Divider />}
