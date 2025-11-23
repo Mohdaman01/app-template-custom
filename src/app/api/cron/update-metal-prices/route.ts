@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     try {
       const { data: proUsers, error: err } = await supabase
         .from('Dashboard Rules')
-        .select('*')
+        .select('*,"Additional Costs"(*)')
         .eq('pro_user', true)
         .eq('use_auto_pricing', true);
 
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
                       user.goldPrice,
                       user.silverPrice,
                       user.platinumPrice,
-                      user.additionalCosts || [],
+                      user['Additional Costs'] || [],
                     );
 
                     return {
@@ -283,7 +283,7 @@ export async function POST(request: NextRequest) {
                       user.goldPrice,
                       user.silverPrice,
                       user.platinumPrice,
-                      user.additionalCosts || [],
+                      user['Additional Costs'] || [],
                     );
 
                     const variants = product?.variantsInfo?.variants || [];
