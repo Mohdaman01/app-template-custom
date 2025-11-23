@@ -211,7 +211,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       const instanceId = appInstance?.instance?.instanceId;
       const supabase = createClient();
 
-      const res = await supabase
+      const { data: res, error } = await supabase
         .from('Dashboard Rules')
         .update({
           goldPrice: prices.goldPrice,
@@ -221,7 +221,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
           use_auto_pricing: true,
           last_api_update: new Date().toISOString(),
         })
-        .eq('instance_id', instanceId);
+        .eq('instance_id', instanceId)
+        .select('*, "Additional Costs"(*)')
+        .maybeSingle();
 
       console.log('Updated Dashboard Rules with live prices:', res);
 
@@ -264,10 +266,12 @@ export const ShippingRatesPageContent = ({}: {}) => {
           .from('Dashboard Rules')
           .update(payload)
           .eq('instance_id', instanceId)
-          .select()
+          .select('*, "Additional Costs"(*)')
           .maybeSingle();
 
         if (error) throw error;
+
+        console.log('Data from updated row: ', rules);
 
         // Update store item prices
         await updateStoreItemPrice({
@@ -277,6 +281,12 @@ export const ShippingRatesPageContent = ({}: {}) => {
           platinumPrice: platinumPrice!,
           additionalCosts,
         });
+
+        const products = await getStoreItemsPrices({ accessToken });
+        console.log('Fetched store products for dashboard:', products);
+        if (products) {
+          setProductsToSet(products);
+        }
 
         showToast({ message: 'Prices and product details updated successfully.', type: 'success' });
       } catch (e) {
