@@ -211,7 +211,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
       const instanceId = appInstance?.instance?.instanceId;
       const supabase = createClient();
 
-      const { data: res, error } = await supabase
+      const { data: rules, error } = await supabase
         .from('Dashboard Rules')
         .update({
           goldPrice: prices.goldPrice,
@@ -225,14 +225,14 @@ export const ShippingRatesPageContent = ({}: {}) => {
         .select('*, "Additional Costs"(*)')
         .maybeSingle();
 
-      console.log('Updated Dashboard Rules with live prices:', res);
+      console.log('Updated Dashboard Rules with live prices:', rules);
 
       const result = await updateStoreItemPrice({
         accessToken,
         goldPrice: prices.goldPrice,
         silverPrice: prices.silverPrice,
         platinumPrice: prices.platinumPrice,
-        additionalCosts,
+        additionalCosts: rules['Additional Costs'],
       });
 
       console.log('Updated store item prices with live prices:', result);
@@ -279,7 +279,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
           goldPrice: goldPrice!,
           silverPrice: silverPrice!,
           platinumPrice: platinumPrice!,
-          additionalCosts,
+          additionalCosts: rules['Additional Costs'],
         });
 
         const products = await getStoreItemsPrices({ accessToken });
