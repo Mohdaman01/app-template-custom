@@ -561,19 +561,21 @@ export const ShippingRatesPageContent = ({}: {}) => {
                       setUpdatedPlatinumPriceForMethod(newPrice);
                     }}
                     prefix={currencyPrefix}
-                    disabled={isProUser ? true : false}
+                    disabled={useAutoPricing ? true : false}
                   />
                 </Cell>
-                <Cell key={2}>
-                  <AdditionalCostForm
-                    title='Set Additional Costs to Include in Product Price Calculation'
-                    prefix={currencyPrefix}
-                    disabled={false}
-                    addAdditionalCost={addAdditionalCost}
-                    additionalCosts={additionalCosts}
-                    deleteAdditionalCost={deleteAdditionalCost}
-                  />
-                </Cell>
+                {isProUser && (
+                  <Cell key={2}>
+                    <AdditionalCostForm
+                      title='Set Additional Costs to Include in Product Price Calculation'
+                      prefix={currencyPrefix}
+                      disabled={false}
+                      addAdditionalCost={addAdditionalCost}
+                      additionalCosts={additionalCosts}
+                      deleteAdditionalCost={deleteAdditionalCost}
+                    />
+                  </Cell>
+                )}
                 <Cell key={3}>
                   <StoreProductsMetalTypeAndWeight
                     title='Set Current Products (Metal type/Weight in grams)'
