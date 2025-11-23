@@ -25,6 +25,7 @@ import { UpdatePriceForm } from './UpdatePriceForm';
 import { StoreProductsMetalTypeAndWeight } from './StoreProductsMetalTypeAndWight';
 import { createClient } from '@/app/utils/supabase/client';
 import { useMetalPrices } from '@/app/client-hooks/metal-prices';
+import { AdditionalCostForm } from './AdditionalCostForm';
 // import { AuthSignIn } from './AuthSignIn';
 // import { useSupabaseAuth } from '@/app/client-hooks/useSupabaseAuth';
 
@@ -55,7 +56,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   // const { isLoading: isLoadingAppData } = useShippingAppData();
   const [mainLoading, setMainLoading] = useState(true);
-
+  const [appInstance, setAppInstance] = useState<any>(null);
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [silverPrice, setSilverPrice] = useState<number | null>(null);
   const [platinumPrice, setPlatinumPrice] = useState<number | null>(null);
@@ -63,6 +64,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   const [productUpdates, setProductUpdates] = useState<
     Array<{ productId: string; metalType: string; metalWeight: number | string }>
   >([]);
+  const [additionalCosts, setAdditionalCosts] = useState<any[]>([]);
   const [isProUser, setIsProUser] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -86,10 +88,11 @@ export const ShippingRatesPageContent = ({}: {}) => {
       const sitePaymentCurrency = appInstance?.site?.paymentCurrency || 'USD';
       console.log('Site payment currency: ', sitePaymentCurrency, ' and Symbol', CURRENCY_SYMBOLS[sitePaymentCurrency]);
       const instanceId = appInstance?.instance?.instanceId;
+      setAppInstance(appInstance);
 
       const { data: rules, error } = await supabase
         .from('Dashboard Rules')
-        .select('*')
+        .select('*, "Additional Costs"(*)')
         .eq('instance_id', instanceId)
         .maybeSingle();
 
@@ -367,6 +370,33 @@ export const ShippingRatesPageContent = ({}: {}) => {
     ],
   );
 
+  const addAdditionalCost = (costName: string, cost: number | string) => {
+    // Handle additional costs change
+    const instanceId = appInstance?.instance?.instanceId;
+    console.log('Additional cost changed for ', instanceId, ' costName: ', costName, ' cost: ', cost);
+
+    const supabase = createClient();
+    // Update additional costs in Dashboard Rules
+    (async () => {
+      const { data: rules, error } = await supabase
+        .from('Additional Costs')
+        .update({
+          cost: cost,
+          cost_name: costName,
+          instance_id: instanceId,
+        })
+        .eq('instance_id', instanceId)
+        .select()
+        .maybeSingle();
+
+      if (error) {
+        console.error('Failed to update additional cost', error);
+        return;
+      }
+      console.log('Updated additional cost:', rules);
+    })();
+  };
+
   return (
     <Page height='100vh' dataHook={testIds.DASHBOARD.WRAPPER}>
       <Page.Header
@@ -512,6 +542,15 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   />
                 </Cell>
                 <Cell key={2}>
+                  <AdditionalCostForm
+                    title='Set Additional Costs to Include in Product Price Calculation'
+                    prefix={currencyPrefix}
+                    disabled={false}
+                    addAdditionalCost={addAdditionalCost}
+                    additionalCosts={additionalCosts}
+                  />
+                </Cell>
+                <Cell key={3}>
                   <StoreProductsMetalTypeAndWeight
                     title='Set Current Products (Metal type/Weight in grams)'
                     productsToSet={productsToSet}
