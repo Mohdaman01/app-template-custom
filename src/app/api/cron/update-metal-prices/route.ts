@@ -26,15 +26,19 @@ const calculatePrice = (
   goldPrice: number,
   silverPrice: number,
   platinumPrice: number,
+  additionalCosts: any[],
 ): number => {
   const normalizedMetalType = metalType?.toUpperCase();
 
+  const totalAdditonalCost = additionalCosts.reduce((sum, cost) => sum + Number(cost.cost || 0), 0);
+  console.log('TotalAdditonalCost: ', totalAdditonalCost);
+
   if (normalizedMetalType === 'GOLD') {
-    return goldPrice * metalWeight;
+    return goldPrice * metalWeight + totalAdditonalCost;
   } else if (normalizedMetalType === 'SILVER') {
-    return silverPrice * metalWeight;
+    return silverPrice * metalWeight + totalAdditonalCost;
   } else if (normalizedMetalType === 'PLATINUM') {
-    return platinumPrice * metalWeight;
+    return platinumPrice * metalWeight + totalAdditonalCost;
   }
 
   return 0;
@@ -198,6 +202,7 @@ export async function POST(request: NextRequest) {
                       user.goldPrice,
                       user.silverPrice,
                       user.platinumPrice,
+                      user.additionalCosts || [],
                     );
 
                     return {
@@ -278,6 +283,7 @@ export async function POST(request: NextRequest) {
                       user.goldPrice,
                       user.silverPrice,
                       user.platinumPrice,
+                      user.additionalCosts || [],
                     );
 
                     const variants = product?.variantsInfo?.variants || [];

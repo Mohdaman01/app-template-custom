@@ -56,24 +56,29 @@ export async function updateStoreItemPrice({
   goldPrice,
   silverPrice,
   platinumPrice,
+  additionalCosts,
 }: {
   accessToken: string;
   goldPrice: number;
   silverPrice: number;
   platinumPrice: number;
+  additionalCosts: any[];
 }) {
   console.log('Updating store item prices based on metal type and weight:', { goldPrice, silverPrice, platinumPrice });
 
   // Helper function to calculate price based on metal type and weight
-  const calculatePrice = (metalType: string, metalWeight: number): number => {
+  const calculatePrice = (metalType: string, metalWeight: number, additionalCosts: any[]): number => {
     const normalizedMetalType = metalType?.toUpperCase();
 
+    const totalAdditonalCost = additionalCosts.reduce((sum, cost) => sum + Number(cost.cost || 0), 0);
+    console.log('TotalAdditonalCost: ', totalAdditonalCost);
+
     if (normalizedMetalType === 'GOLD') {
-      return goldPrice * metalWeight;
+      return goldPrice * metalWeight + totalAdditonalCost;
     } else if (normalizedMetalType === 'SILVER') {
-      return silverPrice * metalWeight;
+      return silverPrice * metalWeight + totalAdditonalCost;
     } else if (normalizedMetalType === 'PLATINUM') {
-      return platinumPrice * metalWeight;
+      return platinumPrice * metalWeight + totalAdditonalCost;
     }
 
     // Default to 0 if metal type is not recognized
@@ -111,7 +116,7 @@ export async function updateStoreItemPrice({
             return null;
           }
 
-          const newPrice = calculatePrice(metalType, metalWeight);
+          const newPrice = calculatePrice(metalType, metalWeight, additionalCosts);
 
           return {
             ...product,
@@ -181,7 +186,7 @@ export async function updateStoreItemPrice({
             return null;
           }
 
-          const newPrice = calculatePrice(metalType as string, metalWeight as number);
+          const newPrice = calculatePrice(metalType as string, metalWeight as number, additionalCosts);
 
           // Get all variants for this product
           const variants = product?.variantsInfo?.variants || [];

@@ -69,16 +69,16 @@ export function AdditionalCostForm({
                   height='60px'
                 >
                   <Layout>
-                    <Cell span={8}>
+                    <Cell span={6}>
                       <Text weight='normal'>{cost.cost_name}</Text>
                     </Cell>
-                    <Cell span={3}>
+                    <Cell span={4}>
                       <Text weight='bold'>
                         {prefix}
                         {cost.cost}
                       </Text>
                     </Cell>
-                    <Cell>
+                    <Cell span={2}>
                       <Button
                         skin='destructive'
                         size='small'

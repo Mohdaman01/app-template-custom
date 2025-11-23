@@ -230,6 +230,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         goldPrice: prices.goldPrice,
         silverPrice: prices.silverPrice,
         platinumPrice: prices.platinumPrice,
+        additionalCosts,
       });
 
       console.log('Updated store item prices with live prices:', result);
@@ -274,6 +275,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
           goldPrice: goldPrice!,
           silverPrice: silverPrice!,
           platinumPrice: platinumPrice!,
+          additionalCosts,
         });
 
         showToast({ message: 'Prices and product details updated successfully.', type: 'success' });
