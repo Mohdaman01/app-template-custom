@@ -118,6 +118,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
       if (rules?.platinumPrice) setPlatinumPrice(rules.platinumPrice);
       if (rules?.pro_user) setIsProUser(rules.pro_user);
       if (rules?.currency) setSelectedCurrency(rules.currency);
+      if (rules['Additional Costs'] && rules['Additional Costs'].length > 0) {
+        setAdditionalCosts(rules['Additional Costs']);
+      }
       if (rules?.use_auto_pricing) {
         console.log('if triggered for userPriceAuto: ');
         console.log('usePriceAuto price before setUserAutoOricing: ', useAutoPricing);
@@ -380,12 +383,11 @@ export const ShippingRatesPageContent = ({}: {}) => {
     (async () => {
       const { data: rules, error } = await supabase
         .from('Additional Costs')
-        .update({
+        .upsert({
           cost: cost,
           cost_name: costName,
           instance_id: instanceId,
         })
-        .eq('instance_id', instanceId)
         .select()
         .maybeSingle();
 
@@ -394,6 +396,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         return;
       }
       console.log('Updated additional cost:', rules);
+      setAdditionalCosts((prevCosts) => (prevCosts ? [rules, ...prevCosts] : [rules]));
     })();
   };
 
@@ -451,7 +454,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 {isProUser && (
                   <Cell>
                     <Card>
-                      <Card.Header title='Automatic Price Updates (Optional)' />
+                      <Card.Header title='Automatic Price Updates' />
                       <Card.Divider />
                       <Card.Content>
                         <Box direction='vertical' gap='SP4'>

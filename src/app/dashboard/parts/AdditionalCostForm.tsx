@@ -68,12 +68,12 @@ export function AdditionalCostForm({
                 >
                   <Layout>
                     <Cell span={8}>
-                      <Text weight='normal'>{cost.name}</Text>
+                      <Text weight='normal'>{cost.cost_name}</Text>
                     </Cell>
                     <Cell span={3}>
                       <Text weight='bold'>
                         {prefix}
-                        {cost.value}
+                        {cost.cost}
                       </Text>
                     </Cell>
                   </Layout>
