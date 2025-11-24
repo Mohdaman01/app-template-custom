@@ -488,7 +488,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 </Cell>
               </Layout>
             )}
-            {!error && mainLoading ? (
+            {!error && mainLoading && (
               <Layout cols={1} alignItems='center' justifyItems='center'>
                 <Cell>
                   <Box width='100%' height='20vh' verticalAlign='middle'>
@@ -496,7 +496,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
                   </Box>
                 </Cell>
               </Layout>
-            ) : (
+            )}
+            {!error && !mainLoading && (
               <Layout>
                 {/* Live Price Fetching Card */}
                 {isProUser && (
