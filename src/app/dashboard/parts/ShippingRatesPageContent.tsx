@@ -155,6 +155,9 @@ export const ShippingRatesPageContent = ({}: {}) => {
       setMainLoading(false);
     } catch (e) {
       console.error('Error loading dashboard data', e);
+      setError(true);
+      setMainLoading(false);
+      return;
     }
   }, [accessTokenPromise]);
 
