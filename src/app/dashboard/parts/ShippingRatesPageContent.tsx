@@ -56,6 +56,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   // const { isLoading: isLoadingAppData } = useShippingAppData();
   const [mainLoading, setMainLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [appInstance, setAppInstance] = useState<any>(null);
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [silverPrice, setSilverPrice] = useState<number | null>(null);
@@ -96,6 +97,13 @@ export const ShippingRatesPageContent = ({}: {}) => {
         .eq('instance_id', instanceId)
         .maybeSingle();
 
+      if (error) {
+        console.error('Failed to fetch dashboard rules', error);
+        setError(true);
+        setMainLoading(false);
+        return;
+      }
+
       console.log('Loaded dashboard rules:', rules);
 
       if (!rules?.currency) {
@@ -106,11 +114,6 @@ export const ShippingRatesPageContent = ({}: {}) => {
           .select()
           .maybeSingle();
         console.log('Updated currency to site currency: ', updateCurrency);
-      }
-
-      if (error) {
-        console.error('Failed to fetch dashboard rules', error);
-        return;
       }
 
       if (rules?.goldPrice) setGoldPrice(rules.goldPrice);
@@ -439,7 +442,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
             activeId='2'
             items={[
               { id: WixPageId.MANAGE_APPS, value: 'Apps' },
-              { id: 'shipping-app-page', value: 'Gold Prices App', disabled: true },
+              { id: 'gold-price-pro', value: 'Gold Prices App', disabled: true },
             ]}
             onClick={({ id }) => navigate(id as string)}
           />
@@ -470,7 +473,19 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 </Cell>
               </Layout>
             ) :  */}
-            {mainLoading ? (
+            {error && (
+              <Layout>
+                <Cell>
+                  <Box>
+                    <Text>
+                      App is note Installed properly check if you have installed Wix Stores app before Insalling Gold
+                      Prices Pro app and Reinstall the app after Uninstalling.
+                    </Text>
+                  </Box>
+                </Cell>
+              </Layout>
+            )}
+            {!error && mainLoading ? (
               <Layout cols={1} alignItems='center' justifyItems='center'>
                 <Cell>
                   <Box width='100%' height='20vh' verticalAlign='middle'>

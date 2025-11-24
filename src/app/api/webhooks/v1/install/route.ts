@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
   const appInstanceData = await appClient.appInstances.getAppInstance();
 
-  const WIX_STORES_APP_ID = '215238eb-22a5-4c36-9e7b-e7c08025e04e';
+  const WIX_STORES_APP_ID = 'stores';
 
   console.log(
     'Installed wix apps:',
