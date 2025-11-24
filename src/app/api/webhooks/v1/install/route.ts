@@ -35,9 +35,17 @@ export async function POST(request: NextRequest) {
 
   const WIX_STORES_APP_ID = '215238eb-22a5-4c36-9e7b-e7c08025e04e';
 
+  console.log(
+    'Installed wix apps:',
+    appInstanceData.site?.installedWixApps,
+    'and WIX_STORES_APP_ID: ',
+    WIX_STORES_APP_ID,
+  );
+
   const hasWixStores = appInstanceData.site?.installedWixApps?.includes(WIX_STORES_APP_ID);
 
   if (!hasWixStores) {
+    console.warn('hasWixStores if block called');
     return new Response(JSON.stringify({ ok: false, message: 'Wix Store App is not Installed' }), { status: 200 });
   }
 
