@@ -360,11 +360,12 @@ export const ShippingRatesPageContent = ({}: {}) => {
     () => (
       <Box gap='SP2'>
         {/* {isSignedIn ? ( */}
-        <>
-          <Button onClick={onSave} disabled={useAutoPricing}>
-            {loading ? <Loader size='tiny' /> : 'Save'}
-          </Button>
-          {/* <Button
+        {!error && !mainLoading && (
+          <>
+            <Button onClick={onSave} disabled={useAutoPricing}>
+              {loading ? <Loader size='tiny' /> : 'Save'}
+            </Button>
+            {/* <Button
               skin='standard'
               onClick={async () => {
                 try {
@@ -378,7 +379,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
             >
               Sign out
             </Button> */}
-        </>
+          </>
+        )}
         {/* ) : null} */}
       </Box>
     ),
@@ -437,7 +439,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   };
 
   return (
-    <Page height='100vh' dataHook={testIds.DASHBOARD.WRAPPER}>
+    <Page height='100vh'>
       <Page.Header
         actionsBar={<ButtonsBar />}
         breadcrumbs={
