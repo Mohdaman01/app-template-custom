@@ -5,6 +5,7 @@ import { createClient, createServiceClient } from '@/app/utils/supabase/server';
 import { createClient as wixClient } from '@wix/sdk/client';
 import { AppStrategy } from '@wix/sdk/auth/wix-app-oauth';
 import { products as Products, productsV3 as ProdcutsV3, catalogVersioning } from '@wix/stores';
+import { appInstances } from '@wix/app-management';
 
 export async function POST(request: NextRequest) {
   console.info('Webhook::install - called');
@@ -27,17 +28,20 @@ export async function POST(request: NextRequest) {
       publicKey: process.env.WIX_APP_JWT_KEY,
       instanceId: instanceId,
     }),
-    modules: { Products, ProdcutsV3, catalogVersioning },
+    modules: { Products, ProdcutsV3, catalogVersioning, appInstances },
   });
 
-  console.log('after app client');
+  const appInstanceData = await appClient.appInstances.getAppInstance();
 
-  const items = await getAllProducts(appClient);
+  const WIX_STORES_APP_ID = '215238eb-22a5-4c36-9e7b-e7c08025e04e';
 
-  console.log('items from site: ', items);
+  const hasWixStores = appInstanceData.site?.installedWixApps?.includes(WIX_STORES_APP_ID);
+
+  if (!hasWixStores) {
+    return new Response(JSON.stringify({ ok: false, message: 'Wix Store App is not Installed' }), { status: 200 });
+  }
 
   const { catalogVersion } = await appClient.catalogVersioning.getCatalogVersion();
-  // console.log('storeVersion is: ', catalogVersion);
 
   let version: 'v1' | 'v3';
 
@@ -46,6 +50,10 @@ export async function POST(request: NextRequest) {
   } else {
     version = 'v3';
   }
+
+  const items = await getAllProducts(appClient, version);
+
+  // console.log('items from site: ', items);
 
   console.log('Determined version: ', version);
 
@@ -164,15 +172,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function getAllProducts(myClient: any) {
+async function getAllProducts(myClient: any, version: string) {
   let allProducts: any[] = [];
-  let queryResult = await myClient.ProdcutsV3.queryProducts().find();
+  if (version == 'v1') {
+    let queryResult = await myClient.Products.queryProducts().find();
 
-  allProducts = allProducts.concat(queryResult.items);
-
-  while (queryResult.hasNext()) {
-    queryResult = await queryResult.next(); // Fetch the next page
     allProducts = allProducts.concat(queryResult.items);
+
+    while (queryResult.hasNext()) {
+      queryResult = await queryResult.next(); // Fetch the next page
+      allProducts = allProducts.concat(queryResult.items);
+    }
+  } else {
+    let queryResult = await myClient.ProdcutsV3.queryProducts().find();
+
+    allProducts = allProducts.concat(queryResult.items);
+
+    while (queryResult.hasNext()) {
+      queryResult = await queryResult.next(); // Fetch the next page
+      allProducts = allProducts.concat(queryResult.items);
+    }
   }
 
   return allProducts;
