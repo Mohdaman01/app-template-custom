@@ -361,13 +361,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         {/* {isSignedIn ? ( */}
         {!error && !mainLoading && (
           <>
-            {!isProUser && (
-              <Button
-                onClick={() => navigate(WixPageId.MANAGE_APPS)}
-              >
-                Upgrade to Pro
-              </Button>
-            )}
+            {!isProUser && <Button onClick={() => navigate(WixPageId.MANAGE_APPS)}>Upgrade to Pro</Button>}
             <Button onClick={onSave} disabled={useAutoPricing}>
               {loading ? <Loader size='tiny' /> : 'Save'}
             </Button>
