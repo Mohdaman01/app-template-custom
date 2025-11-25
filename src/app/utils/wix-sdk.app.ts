@@ -1,6 +1,7 @@
 import { AppStrategy } from '@wix/sdk/auth/wix-app-oauth';
 import { createClient } from '@wix/sdk/client';
 import { products } from '@wix/stores';
+import { catalogVersioning } from '@wix/stores';
 import { appInstances } from '@wix/app-management';
 
 export const wixAppClient = createClient({
@@ -9,5 +10,5 @@ export const wixAppClient = createClient({
     appSecret: process.env.WIX_APP_SECRET!,
     publicKey: process.env.WIX_APP_JWT_KEY,
   }),
-  modules: { products, appInstances },
+  modules: { products, appInstances, catalogVersioning },
 });

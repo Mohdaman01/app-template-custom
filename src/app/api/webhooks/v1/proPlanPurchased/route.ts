@@ -6,6 +6,7 @@ import { createServiceClient } from '@/app/utils/supabase/server';
 wixAppClient.appInstances.onAppInstancePaidPlanPurchased(async (event) => {
   console.log(`onAppInstancePaidPlanPurchased invoked with data:`, event);
   console.log(`App instance ID:`, event.metadata.instanceId);
+  const catalogVersion = wixAppClient.catalogVersioning.getCatalogVersion();
 
   try {
     const cookieStore = cookies();
@@ -25,6 +26,11 @@ wixAppClient.appInstances.onAppInstancePaidPlanPurchased(async (event) => {
 
     if (error) {
       console.error('Error updating Dashboard Rules:', error);
+      await supabase.from('Error Logs').insert({
+        message: error.message,
+        store_catalog_version: catalogVersion,
+        instance_id: event.metadata.instanceId,
+      });
     } else {
       console.log('Successfully updated Dashboard Rules for instance:', event.metadata.instanceId);
       console.log('Updated rows:', data);
