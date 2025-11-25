@@ -78,7 +78,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   // const [currencyPrefix, setCurrencyPrefix] = useState('$');
 
   const accessTokenPromise = useAccessToken();
-  const { fetchPrices, loading: pricesLoading, error: pricesError, lastFetch, isFromCache } = useMetalPrices();
+  const { fetchPrices, loading: pricesLoading, error: pricesError, lastFetch, isFromDatabase } = useMetalPrices();
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -195,7 +195,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
     console.log('autoPriceingEnabled outside of if : ', autoPricingEnabled);
 
-    const prices = await fetchPrices(selectedCurrency, useAutoPricing);
+    const prices = await fetchPrices(selectedCurrency);
     if (prices) {
       setGoldPrice(prices.goldPrice);
       setSilverPrice(prices.silverPrice);
@@ -205,10 +205,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
       let message = '';
       if (prices.fromDatabase) {
         message = `Prices loaded from database (${prices.currency}). Last updated ${prices.ageHours} hours ago. Next automatic update in ${prices.nextUpdateIn}.`;
-      } else if (prices.fromCache) {
-        message = `Prices loaded from cache (${prices.currency}). Next API call available after ${new Date(prices.expiresAt!).toLocaleTimeString()}`;
       } else {
-        message = `Fresh prices fetched from API (${prices.currency}). Valid for 1 hour.`;
+        message = `Prices updated.Next automatic update in ${prices.nextUpdateIn}`;
       }
 
       showToast({
@@ -576,11 +574,11 @@ export const ShippingRatesPageContent = ({}: {}) => {
                                   <Text size='small' secondary>
                                     Last fetched: {new Date(lastApiUpdate).toLocaleString()}
                                   </Text>
-                                  {isFromCache && (
+                                  {/* {isFromCache && (
                                     <Text size='small' skin='success'>
                                       ✓ Loaded from cache (API calls limited to once per hour)
                                     </Text>
-                                  )}
+                                  )} */}
                                 </Box>
                               )}
 
