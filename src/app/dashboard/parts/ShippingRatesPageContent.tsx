@@ -363,8 +363,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
           <>
             {!isProUser && (
               <Button
-                href={`https://www.wix.com/apps/upgrade/${process.env.WIX_APP_ID}?appInstanceId=${appInstance?.instance?.instanceId}`}
-                target='_blank'
+                onClick={() => navigate(WixPageId.MANAGE_APPS)}
               >
                 Upgrade to Pro
               </Button>
