@@ -361,8 +361,10 @@ export const ShippingRatesPageContent = ({}: {}) => {
         {/* {isSignedIn ? ( */}
         {!error && !mainLoading && (
           <>
-            {isProUser && (
-              <Button href={`https://www.wix.com/apps/upgrade/${process.env.WIX_APP_ID}?appInstanceId=${appInstance}`}>
+            {!isProUser && (
+              <Button
+                href={`https://www.wix.com/apps/upgrade/${process.env.WIX_APP_ID}?appInstanceId=${appInstance?.instance?.instanceId}`}
+              >
                 Upgrade to Pro
               </Button>
             )}
