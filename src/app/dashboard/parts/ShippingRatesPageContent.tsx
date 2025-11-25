@@ -55,7 +55,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
   } = useSDK();
 
   const [mainLoading, setMainLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [appInstance, setAppInstance] = useState<any>(null);
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [silverPrice, setSilverPrice] = useState<number | null>(null);
@@ -85,64 +85,65 @@ export const ShippingRatesPageContent = ({}: {}) => {
       const supabase = createClient();
       const accessToken = (await accessTokenPromise)!;
       const appInstance = await getAppInstance({ accessToken });
-      const sitePaymentCurrency = appInstance?.site?.paymentCurrency || 'USD';
+
+      if (!appInstance || !appInstance.instance?.instanceId) {
+        setError('Failed to get app instance. Please ensure the app is installed correctly.');
+        setMainLoading(false);
+        return;
+      }
+
+      const sitePaymentCurrency = appInstance.site?.paymentCurrency || 'USD';
       console.log('Site payment currency: ', sitePaymentCurrency, ' and Symbol', CURRENCY_SYMBOLS[sitePaymentCurrency]);
-      const instanceId = appInstance?.instance?.instanceId;
+      const instanceId = appInstance.instance.instanceId;
       setAppInstance(appInstance);
 
-      const { data: rules, error } = await supabase
+      const { data: rules, error: dbError } = await supabase
         .from('Dashboard Rules')
         .select('*, "Additional Costs"(*)')
         .eq('instance_id', instanceId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Failed to fetch dashboard rules', error);
-        setError(true);
+      if (dbError) {
+        console.error('Failed to fetch dashboard rules', dbError);
+        setError(`Failed to fetch app settings: ${dbError.message}`);
         setMainLoading(false);
         return;
       }
 
       console.log('Loaded dashboard rules:', rules);
 
-      if (!rules?.currency) {
-        const updateCurrency = await supabase
+      if (rules && !rules.currency) {
+        const { error: updateError } = await supabase
           .from('Dashboard Rules')
           .update({ currency: sitePaymentCurrency })
           .eq('instance_id', instanceId)
           .select()
           .maybeSingle();
-        console.log('Updated currency to site currency: ', updateCurrency);
+        if (updateError) {
+          console.warn('Failed to update currency automatically', updateError);
+        } else {
+          console.log('Updated currency to site currency');
+          setSelectedCurrency(sitePaymentCurrency);
+          setCurrencyPrefix(CURRENCY_SYMBOLS[sitePaymentCurrency] || '$');
+        }
       }
 
-      if (rules?.goldPrice) setGoldPrice(rules.goldPrice);
-      if (rules?.silverPrice) setSilverPrice(rules.silverPrice);
-      if (rules?.platinumPrice) setPlatinumPrice(rules.platinumPrice);
-      if (rules?.pro_user) setIsProUser(rules.pro_user);
-      if (rules?.currency) setSelectedCurrency(rules.currency);
-      if (rules['Additional Costs'] && rules['Additional Costs'].length > 0) {
-        setAdditionalCosts(rules['Additional Costs']);
-      }
-      if (rules?.use_auto_pricing) {
-        console.log('if triggered for userPriceAuto: ');
-        console.log('usePriceAuto price before setUserAutoOricing: ', useAutoPricing);
-        setUseAutoPricing(true);
-        console.log('usePriceAuto price after setUserAutoOricing: ', useAutoPricing);
-      } else {
-        console.log('else triggered for userPriceAuto: ');
-        console.log('usePriceAuto price before setUserAutoOricing: ', useAutoPricing);
-        setUseAutoPricing(false);
-        console.log('usePriceAuto price after setUserAutoOricing: ', useAutoPricing);
-      }
-      if (rules?.last_api_update) setLastApiUpdate(rules.last_api_update);
-      if (rules?.currency) {
-        setSelectedCurrency(rules.currency);
+      if (rules) {
+        if (rules.goldPrice) setGoldPrice(rules.goldPrice);
+        if (rules.silverPrice) setSilverPrice(rules.silverPrice);
+        if (rules.platinumPrice) setPlatinumPrice(rules.platinumPrice);
+        if (rules.pro_user) setIsProUser(rules.pro_user);
+        if (rules.currency) setSelectedCurrency(rules.currency);
+        if (rules['Additional Costs'] && rules['Additional Costs'].length > 0) {
+          setAdditionalCosts(rules['Additional Costs']);
+        }
+        setUseAutoPricing(!!rules.use_auto_pricing);
+        if (rules.last_api_update) setLastApiUpdate(rules.last_api_update);
+        const currency = rules.currency || sitePaymentCurrency;
+        setSelectedCurrency(currency);
+        setCurrencyPrefix(CURRENCY_SYMBOLS[currency] || '$');
       } else {
         setSelectedCurrency(sitePaymentCurrency);
-      }
-      if (rules?.currency) {
-        setCurrencyPrefix(CURRENCY_SYMBOLS[rules.currency] || '$');
-      } else {
         setCurrencyPrefix(CURRENCY_SYMBOLS[sitePaymentCurrency] || '$');
       }
 
@@ -150,13 +151,18 @@ export const ShippingRatesPageContent = ({}: {}) => {
       console.log('Fetched store products for dashboard:', products);
       if (products) {
         setProductsToSet(products);
+      } else {
+        setError(
+          'Could not fetch store products. Please ensure the Wix Stores app is installed and you have products in your store.',
+        );
+        setMainLoading(false);
+        return;
       }
       setMainLoading(false);
     } catch (e) {
       console.error('Error loading dashboard data', e);
-      setError(true);
+      setError(e instanceof Error ? e.message : 'An unknown error occurred while loading data.');
       setMainLoading(false);
-      return;
     }
   }, [accessTokenPromise]);
 
@@ -229,6 +235,17 @@ export const ShippingRatesPageContent = ({}: {}) => {
         .eq('instance_id', instanceId)
         .select('*, "Additional Costs"(*)')
         .maybeSingle();
+
+      if (error) {
+        console.error('Failed to update Dashboard Rules with live prices:', error);
+        showToast({ message: `Error saving prices: ${error.message}`, type: 'error' });
+        return;
+      }
+
+      if (!rules) {
+        showToast({ message: 'Could not find dashboard rules to update.', type: 'error' });
+        return;
+      }
 
       console.log('Updated Dashboard Rules with live prices:', rules);
 
@@ -413,6 +430,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
       if (error) {
         console.error('Failed to update additional cost', error);
+        showToast({ message: `Failed to add cost: ${error.message}`, type: 'error' });
         return;
       }
       console.log('Updated additional cost:', rules);
@@ -431,6 +449,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
       if (error) {
         console.error('Failed to delete additional cost', error);
+        showToast({ message: `Failed to delete cost: ${error.message}`, type: 'error' });
         return;
       }
       console.log('Deleted additional cost with id:', costId);
@@ -481,10 +500,12 @@ export const ShippingRatesPageContent = ({}: {}) => {
             {error && (
               <Layout>
                 <Cell>
-                  <Box>
+                  <Box direction='vertical' gap='SP2'>
+                    <Text weight='bold' skin='error'>
+                      {error}
+                    </Text>
                     <Text>
-                      App is note Installed properly check if you have installed Wix Stores app before Insalling Gold
-                      Prices Pro app and Reinstall the app after Uninstalling.
+                      If the problem persists, ensure the Wix Stores app is installed and try reinstalling this app.
                     </Text>
                   </Box>
                 </Cell>
