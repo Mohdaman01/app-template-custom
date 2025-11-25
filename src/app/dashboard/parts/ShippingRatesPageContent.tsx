@@ -54,7 +54,6 @@ export const ShippingRatesPageContent = ({}: {}) => {
     dashboard: { showToast, navigate },
   } = useSDK();
 
-  // const { isLoading: isLoadingAppData } = useShippingAppData();
   const [mainLoading, setMainLoading] = useState(true);
   const [error, setError] = useState(false);
   const [appInstance, setAppInstance] = useState<any>(null);
