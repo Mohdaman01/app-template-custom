@@ -357,10 +357,15 @@ export const ShippingRatesPageContent = ({}: {}) => {
 
   const ButtonsBar = useCallback(
     () => (
-      <Box gap='SP2'>
+      <Box gap='SP3'>
         {/* {isSignedIn ? ( */}
         {!error && !mainLoading && (
           <>
+            {isProUser && (
+              <Button href={`https://www.wix.com/apps/upgrade/${process.env.WIX_APP_ID}?appInstanceId=${appInstance}`}>
+                Upgrade to Pro
+              </Button>
+            )}
             <Button onClick={onSave} disabled={useAutoPricing}>
               {loading ? <Loader size='tiny' /> : 'Save'}
             </Button>

@@ -25,7 +25,15 @@ export function AdditionalCostForm({
         title={title}
         suffix={
           <Box gap='SP2' align='center'>
-            <Button onClick={() => addAdditionalCost && addAdditionalCost(newCostName, newCostValue)}>Add Cost</Button>
+            <Button
+              onClick={async () => {
+                if (addAdditionalCost) addAdditionalCost(newCostName, newCostValue);
+                setNewCostName('');
+                setNewCostValue(0);
+              }}
+            >
+              Add Cost
+            </Button>
           </Box>
         }
       />
