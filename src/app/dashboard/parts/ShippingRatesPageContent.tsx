@@ -146,6 +146,8 @@ export const ShippingRatesPageContent = ({}: {}) => {
           }
         }
 
+        setIsProUser(isPro);
+
         if (rules.currency) setSelectedCurrency(rules.currency);
         if (rules['Additional Costs'] && rules['Additional Costs'].length > 0) {
           setAdditionalCosts(rules['Additional Costs']);
