@@ -132,7 +132,20 @@ export const ShippingRatesPageContent = ({}: {}) => {
         if (rules.goldPrice) setGoldPrice(rules.goldPrice);
         if (rules.silverPrice) setSilverPrice(rules.silverPrice);
         if (rules.platinumPrice) setPlatinumPrice(rules.platinumPrice);
-        if (rules.pro_user) setIsProUser(rules.pro_user);
+
+        const planStatus = rules.plan_status;
+        const planExpiresAt = rules.plan_expire_at;
+        let isPro = false;
+
+        if (planStatus === 'active') {
+          isPro = true;
+        } else if (planStatus === 'cancelled' && planExpiresAt) {
+          const expiryDate = new Date(planExpiresAt);
+          if (expiryDate > new Date()) {
+            isPro = true; // Still has access until the end of the period
+          }
+        }
+
         if (rules.currency) setSelectedCurrency(rules.currency);
         if (rules['Additional Costs'] && rules['Additional Costs'].length > 0) {
           setAdditionalCosts(rules['Additional Costs']);

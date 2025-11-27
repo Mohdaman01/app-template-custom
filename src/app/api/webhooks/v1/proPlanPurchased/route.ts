@@ -16,11 +16,14 @@ wixAppClient.appInstances.onAppInstancePaidPlanPurchased(async (event) => {
     const { data, error } = await supabase
       .from('Dashboard Rules')
       .update({
-        pro_user: true,
+        plan_status: 'active',
+        // pro_user: true,
         pro_plan_purchased_timestamp: event.data.operationTimeStamp,
         plan_id: event.data.vendorProductId,
         payment_cycle: event.data.cycle,
         plan_expire_at: event.data.expiresOn,
+        cancelled_at: null,
+        cancellation_reason: null,
       })
       .eq('instance_id', event.metadata.instanceId);
 
