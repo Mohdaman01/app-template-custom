@@ -7,6 +7,7 @@ export function AdditionalCostForm({
   disabled,
   addAdditionalCost,
   additionalCosts,
+  maxAdditionalCosts,
   deleteAdditionalCost,
 }: {
   title: string;
@@ -14,6 +15,7 @@ export function AdditionalCostForm({
   disabled: boolean;
   addAdditionalCost?: (costName: string, cost: number | string) => void;
   additionalCosts?: any[];
+  maxAdditionalCosts?: number;
   deleteAdditionalCost?: (costId: number) => void;
 }) {
   const [newCostName, setNewCostName] = useState('');
@@ -27,7 +29,12 @@ export function AdditionalCostForm({
     }
   }, [addAdditionalCost, newCostName, newCostValue]);
 
-  const isAddButtonDisabled = disabled || !newCostName.trim() || !newCostValue || newCostValue <= 0;
+  const isAddButtonDisabled =
+    disabled ||
+    !newCostName.trim() ||
+    !newCostValue ||
+    newCostValue <= 0 ||
+    (additionalCosts && maxAdditionalCosts !== undefined && additionalCosts.length >= maxAdditionalCosts);
 
   return (
     <Card>
@@ -35,6 +42,9 @@ export function AdditionalCostForm({
         title={title}
         suffix={
           <Box gap='SP2' align='center'>
+            <Text>
+              {additionalCosts ? additionalCosts.length : 0} / {maxAdditionalCosts}
+            </Text>
             <Button onClick={handleAddCost} disabled={isAddButtonDisabled}>
               Add Cost
             </Button>

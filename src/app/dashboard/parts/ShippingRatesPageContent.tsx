@@ -65,6 +65,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
     Array<{ productId: string; metalType: string; metalWeight: number | string }>
   >([]);
   const [additionalCosts, setAdditionalCosts] = useState<any[]>([]);
+  const [maxAdditionalCosts, setMaxAdditionalCosts] = useState<number>(0);
   const [isProUser, setIsProUser] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -152,6 +153,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
         if (rules['Additional Costs'] && rules['Additional Costs'].length > 0) {
           setAdditionalCosts(rules['Additional Costs']);
         }
+        if (rules.max_additional_costs) setMaxAdditionalCosts(rules.max_additional_costs);
         setUseAutoPricing(!!rules.use_auto_pricing);
         if (rules.last_api_update) setLastApiUpdate(rules.last_api_update);
         const currency = rules.currency || sitePaymentCurrency;
@@ -637,6 +639,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                       disabled={false}
                       addAdditionalCost={addAdditionalCost}
                       additionalCosts={additionalCosts}
+                      maxAdditionalCosts={maxAdditionalCosts}
                       deleteAdditionalCost={deleteAdditionalCost}
                     />
                   </Cell>
